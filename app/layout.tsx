@@ -7,7 +7,7 @@ import { GeistMono } from "geist/font/mono";
 import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
-    title: "Meetly",
+    title: "Linkup",
     description: "Video calling app",
 };
 
