@@ -16,7 +16,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`} suppressHydrationWarning>
             <body className={GeistSans.className}>
                 {children}
-                <Toaster theme="dark" position="top-center" />
+                <Toaster
+                    theme="dark"
+                    position="top-right"
+                    duration={3000}
+                    toastOptions={{
+                        className: "bg-zinc-900! text-red-400! border! border-red-500/30! shadow-lg!",
+                    }}
+                />
             </body>
         </html>
     );

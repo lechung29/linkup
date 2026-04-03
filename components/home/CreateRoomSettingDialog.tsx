@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { PrimaryButton } from "@/components/ui/primary-button";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type JoinPolicy = "always" | "approval";
 
@@ -39,11 +40,8 @@ export function CreateRoomDialog({ open, roomId, onClose }: CreateRoomDialogProp
     const [name, setName] = useState("");
     const [joinPolicy, setJoinPolicy] = useState<JoinPolicy>("always");
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-
     const handleStart = async () => {
         setLoading(true);
-        setError("");
         try {
             const res = await fetch("/api/rooms", {
                 method: "POST",
@@ -52,12 +50,12 @@ export function CreateRoomDialog({ open, roomId, onClose }: CreateRoomDialogProp
             });
             const data = await res.json();
             if (!res.ok) {
-                setError(data.error || "Something went wrong");
+                toast.error(data.error || "Something went wrong");
                 return;
             }
             router.push(`/room/${roomId}`);
         } catch {
-            setError("Cannot connect to server");
+            toast.error("Cannot connect to server");
         } finally {
         }
     };
@@ -121,8 +119,6 @@ export function CreateRoomDialog({ open, roomId, onClose }: CreateRoomDialogProp
                             ))}
                         </div>
                     </div>
-
-                    {error && <p className="text-red-400 text-xs text-center mb-4">{error}</p>}
 
                     <div className="flex gap-3">
                         <button
