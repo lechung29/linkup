@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
             name: room.name,
             hostId: room.hostId,
             joinPolicy: room.joinPolicy,
+            startedAt: room.startedAt
         },
     });
 }

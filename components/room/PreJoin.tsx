@@ -127,34 +127,26 @@ export default function PreJoin({ roomId, roomName, session, onJoin }: PreJoinPr
                             {camOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
                         </button>
                     </div>
-
-                    {/* Settings */}
-                    <button className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 hover:bg-white/10 text-white/70 transition-all duration-200">
-                        <Settings className="w-4 h-4" />
-                    </button>
-                </div>
-
-                {/* Name input + Join */}
-                <div className="flex gap-3">
-                    <Input
-                        value={displayName}
-                        onChange={(e) => setDisplayName(e.target.value)}
-                        placeholder="Your name..."
-                        className="h-12 rounded-xl bg-white/4 border-white/8 text-white placeholder:text-white/20 focus-visible:ring-[#6346ff]/50 focus-visible:border-[#6346ff]/50"
-                    />
-                    <PrimaryButton
-                        onClick={() => {
-                            // Stop preview stream trước khi vào room
-                            stream?.getTracks().forEach((t) => t.stop());
-                            onJoin({ micEnabled: micOn, camEnabled: camOn }); // 👈 truyền state
-                        }}
-                        disabled={!displayName.trim()}
-                        uiVariant="filled"
-                        tone="dark"
-                        className="px-6 whitespace-nowrap"
-                    >
-                        Join Now
-                    </PrimaryButton>
+                    <div className="flex gap-3">
+                        <Input
+                            value={displayName}
+                            onChange={(e) => setDisplayName(e.target.value)}
+                            placeholder="Your name..."
+                            className="h-12 rounded-xl bg-white/4 border-white/8 text-white placeholder:text-white/20 focus-visible:ring-[#6346ff]/50 focus-visible:border-[#6346ff]/50"
+                        />
+                        <PrimaryButton
+                            onClick={() => {
+                                stream?.getTracks().forEach((t) => t.stop());
+                                onJoin({ micEnabled: micOn, camEnabled: camOn });
+                            }}
+                            disabled={!displayName.trim()}
+                            uiVariant="filled"
+                            tone="dark"
+                            className="px-6 whitespace-nowrap"
+                        >
+                            Join Now
+                        </PrimaryButton>
+                    </div>
                 </div>
             </motion.div>
         </div>

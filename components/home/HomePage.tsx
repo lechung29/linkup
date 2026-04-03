@@ -9,7 +9,7 @@ import { Navbar } from "./Navbar";
 import { GlassCard } from "./GlassCard";
 import { CreateRoom } from "./CreateRoom";
 import { TabSwitcher } from "./TabSwitch";
-import { JoinRoom } from "./JohnRoom";
+import { JoinRoom } from "./JoinRoom";
 
 interface HomePageProps {
     session: Session | null;

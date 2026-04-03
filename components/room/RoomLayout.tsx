@@ -15,6 +15,7 @@ import { useSocket } from "@/hooks/useSocket";
 import { useEffect } from "react";
 import RoomTimerNotice from "./RoomTimeNotice";
 import RoomEndedModal from "./RoomEndModal";
+import { useRoomStore } from "@/store/useRoomStore";
 
 interface RoomLayoutProps {
     roomName: string;
@@ -23,6 +24,7 @@ interface RoomLayoutProps {
     session: Session;
     initialMic: boolean;
     initialCam: boolean;
+    startedAt: string;
 }
 
 interface ShareRequester {
@@ -31,7 +33,7 @@ interface ShareRequester {
     socketId: string;
 }
 
-export default function RoomLayout({ roomName, roomId, hostId, session, initialMic, initialCam }: RoomLayoutProps) {
+export default function RoomLayout({ roomName, roomId, hostId, session, initialMic, initialCam, startedAt }: RoomLayoutProps) {
     const [chatOpen, setChatOpen] = useState(false);
     const [activePanel, setActivePanel] = useState<"chat" | "participants">("chat");
     const [shareRequester, setShareRequester] = useState<ShareRequester | null>(null);
@@ -39,6 +41,23 @@ export default function RoomLayout({ roomName, roomId, hostId, session, initialM
     const isHost = session.user?.id === hostId;
     const isOverflow = participants.length > 8;
     const socket = useSocket();
+    const { setStartedAt } = useRoomStore();
+
+    useEffect(() => {
+        if (startedAt) {
+            setStartedAt(new Date(startedAt).getTime());
+        }
+    }, [startedAt]);
+
+    useEffect(() => {
+        if (!socket) return;
+        socket.on("room:sync", ({ startedAt }: { startedAt: number | null }) => {
+            if (startedAt) setStartedAt(startedAt);
+        });
+        return () => {
+            socket.off("room:sync");
+        };
+    }, [socket]);
 
     useEffect(() => {
         if (!socket) return;
@@ -97,9 +116,7 @@ export default function RoomLayout({ roomName, roomId, hostId, session, initialM
                 session={session}
                 onShareRequest={(requester, socketId) => setShareRequester({ ...requester, socketId })}
             />
-
             <WaitingGuests roomId={roomId} session={session} isHost={isHost} />
-
             <ScreenShareRequest requester={shareRequester} onApprove={handleApproveShare} onReject={handleRejectShare} />
             <RoomTimerNotice />
             <RoomEndedModal />

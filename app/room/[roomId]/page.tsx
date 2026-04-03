@@ -20,5 +20,5 @@ export default async function RoomPage({ params }: PageProps) {
     const room = await Room.findOne({ roomId, isActive: true });
     if (!room) redirect("/");
 
-    return <RoomClient roomId={roomId} roomName={room.name || `Room ${roomId}`} hostId={room.hostId} joinPolicy={room.joinPolicy} session={session} />;
+    return <RoomClient roomId={roomId} roomName={room.name || `Room ${roomId}`} hostId={room.hostId} joinPolicy={room.joinPolicy} session={session} startedAt={room.startedAt} />;
 }

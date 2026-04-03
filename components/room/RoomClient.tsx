@@ -6,13 +6,14 @@ import { useState } from "react";
 import { Session } from "next-auth";
 import VideoRoom from "./VideoRoom";
 import WaitingRoom from "./WaitingRoom";
-import PreJoin from "./PreJohn";
+import PreJoin from "./PreJoin";
 
 interface RoomClientProps {
     roomId: string;
     roomName: string;
     hostId: string;
     joinPolicy: "always" | "approval";
+    startedAt: string;
     session: Session;
 }
 
@@ -23,7 +24,7 @@ interface JoinOptions {
     camEnabled: boolean;
 }
 
-export default function RoomClient({ roomId, roomName, hostId, joinPolicy, session }: RoomClientProps) {
+export default function RoomClient({ roomId, roomName, hostId, joinPolicy, session, startedAt }: RoomClientProps) {
     const isHost = session.user?.id === hostId;
     const [stage, setStage] = useState<Stage>("prejoin");
     const [joinOptions, setJoinOptions] = useState<JoinOptions>({ micEnabled: true, camEnabled: true });
@@ -45,5 +46,5 @@ export default function RoomClient({ roomId, roomName, hostId, joinPolicy, sessi
         return <WaitingRoom roomId={roomId} session={session} onApproved={() => setStage("room")} />;
     }
 
-    return <VideoRoom roomId={roomId} roomName={roomName} hostId={hostId} session={session} initialMic={joinOptions.micEnabled} initialCam={joinOptions.camEnabled} />;
+    return <VideoRoom roomId={roomId} roomName={roomName} hostId={hostId} session={session} initialMic={joinOptions.micEnabled} initialCam={joinOptions.camEnabled} startedAt={startedAt}/>;
 }

@@ -2,7 +2,7 @@
 
 import { Server as HTTPServer } from "http";
 import { Server as SocketServer } from "socket.io";
-import { startRoomTimer, stopRoomTimer, getRoomTimeLeft } from "./roomTimer";
+import { startRoomTimer, stopRoomTimer, getRoomTimeLeft, getStartedAt } from "./roomTimer";
 
 let io: SocketServer;
 const roomIdentityMap: Record<string, Record<string, string>> = {};
@@ -39,7 +39,7 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
                 io.to(socketId).emit("guest:rejected", { roomId });
             });
 
-            socket.on("room:join", ({ roomId, identity }: { roomId: string; identity: string }) => {
+            socket.on("room:join", async ({ roomId, identity }: { roomId: string; identity: string }) => {
                 socket.join(`room:${roomId}`);
                 socket.data.roomId = roomId;
                 socket.data.identity = identity;
@@ -47,28 +47,40 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
                 if (!roomIdentityMap[roomId]) roomIdentityMap[roomId] = {};
                 roomIdentityMap[roomId][identity] = socket.id;
 
-                // Đếm participants
                 roomParticipantCount[roomId] = (roomParticipantCount[roomId] || 0) + 1;
 
-                // Start timer khi người đầu tiên vào
+                // Start timer khi người đầu tiên vào (host)
                 if (roomParticipantCount[roomId] === 1) {
-                    startRoomTimer(io, roomId);
-                }
+                    const now = Date.now();
+                    startRoomTimer(io, roomId, now);
 
-                // Gửi thời gian còn lại cho người mới vào
-                const timeLeft = getRoomTimeLeft(roomId);
-                if (timeLeft !== null) {
-                    const minutesLeft = Math.floor(timeLeft / 60000);
-                    if (minutesLeft <= 15) {
-                        // Nếu còn <= 15 phút → báo ngay cho người mới vào
-                        socket.emit("room:warning", {
-                            message: `Phòng sẽ kết thúc sau ${minutesLeft} phút`,
-                            minutesLeft,
-                        });
+                    // ✅ Lưu startedAt vào DB
+                    try {
+                        const connectDB = (await import("../lib/mongodb")).default;
+                        const Room = (await import("../models/room")).default;
+                        await connectDB();
+                        await Room.findOneAndUpdate({ roomId }, { startedAt: new Date(now) });
+                    } catch (err) {
+                        console.error("[room] startedAt error:", err);
                     }
                 }
 
-                console.log(`[room:join] ${identity} in room ${roomId} — ${roomParticipantCount[roomId]} participants`);
+                // ✅ Gửi startedAt cho người mới vào để đồng bộ timer
+                const timeLeft = getRoomTimeLeft(roomId);
+                const startedAt = getStartedAt(roomId);
+
+                socket.emit("room:sync", {
+                    startedAt,
+                    timeLeft,
+                });
+
+                if (timeLeft !== null && timeLeft <= 15 * 60 * 1000) {
+                    const minutesLeft = Math.floor(timeLeft / 60000);
+                    socket.emit("room:warning", {
+                        message: `Phòng sẽ kết thúc sau ${minutesLeft} phút`,
+                        minutesLeft,
+                    });
+                }
             });
             socket.on("chat:send", ({ roomId, message }: { roomId: string; message: any }) => {
                 io.to(`room:${roomId}`).emit("chat:message", message);
@@ -119,9 +131,11 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
                         try {
                             const connectDB = (await import("../lib/mongodb")).default;
                             const Room = (await import("../models/room")).default;
+                            const Message = (await import("../models/message")).default;
                             await connectDB();
-                            await Room.findOneAndUpdate({ roomId }, { isActive: false });
-                            console.log(`[room] ${roomId} empty → deactivated in DB`);
+                            await Room.findOneAndDelete({ roomId });
+                            await Message.deleteMany({ roomId });
+                            console.log(`[room] ${roomId} empty → deleted room + messages`);
                         } catch (err) {
                             console.error("[room] DB error:", err);
                         }

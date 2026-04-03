@@ -32,16 +32,16 @@ export function Navbar({ session }: NavbarProps) {
         >
             <LogoWithText />
             <DropdownMenu>
-                <DropdownMenuTrigger className="flex items-center gap-2.5 rounded-xl px-3 py-2 border border-transparent outline-none transition-all duration-200 hover:bg-white/5 hover:border-white/10">
+                <DropdownMenuTrigger className="flex items-center gap-2.5 rounded-xl px-3 py-2 border border-transparent outline-none transition-all duration-200 hover:bg-white/5 hover:border-white/10 cursor-pointer">
                     <Avatar className="w-8 h-8">
                         <AvatarImage src={user?.image ?? ""} />
                         <AvatarFallback className="bg-[#6346ff] text-white text-xs font-semibold">{initials}</AvatarFallback>
                     </Avatar>
                     <span className="text-white/70 text-sm font-medium hidden sm:block">{user?.name}</span>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="border-white/10 bg-[#111420]/90 backdrop-blur-xl text-white/80">
-                    <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })} className="gap-2 cursor-pointer hover:text-white focus:text-white focus:bg-white/5">
-                        <LogOut className="w-4 h-4" />
+                <DropdownMenuContent align="end" className="border-white/10 bg-[#111420]/90 backdrop-blur-xl text-white/80 group">
+                    <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })} className="gap-2 cursor-pointer hover:!text-white focus:text-white focus:bg-white/5">
+                        <LogOut className="w-4 h-4" color="#fff" />
                         Sign out
                     </DropdownMenuItem>
                 </DropdownMenuContent>

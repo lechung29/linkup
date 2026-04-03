@@ -12,12 +12,13 @@ interface VideoRoomProps {
     roomId: string;
     roomName: string;
     hostId: string;
+    startedAt: string;
     session: Session;
-    initialMic: boolean; // 👈
-    initialCam: boolean; // 👈
+    initialMic: boolean;
+    initialCam: boolean;
 }
 
-export default function VideoRoom({ roomId, roomName, hostId, session, initialMic, initialCam }: VideoRoomProps) {
+export default function VideoRoom({ roomId, roomName, hostId, session, initialMic, initialCam, startedAt }: VideoRoomProps) {
     const [token, setToken] = useState("");
 
     useEffect(() => {
@@ -40,14 +41,14 @@ export default function VideoRoom({ roomId, roomName, hostId, session, initialMi
     return (
         <LiveKitRoom
             token={token}
-            audio={initialMic} // 👈
+            audio={initialMic}
             video={initialCam}
             serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL!}
             connect={true}
             className="fixed inset-0 bg-[#0a0c10]"
         >
             <RoomAudioRenderer />
-            <RoomLayout roomId={roomId} roomName={roomName} hostId={hostId} session={session} initialMic={initialMic} initialCam={initialCam} />
+            <RoomLayout roomId={roomId} roomName={roomName} hostId={hostId} session={session} initialMic={initialMic} initialCam={initialCam} startedAt={startedAt} />
         </LiveKitRoom>
     );
 }

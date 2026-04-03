@@ -2,10 +2,11 @@
 
 "use client";
 
-import { useElapsedTime } from "use-elapsed-time";
+import { useState, useEffect } from "react";
 import { Session } from "next-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogoWithText } from "../ui/logo";
+import { useRoomStore } from "@/store/useRoomStore";
 
 interface RoomHeaderProps {
     roomName: string;
@@ -23,7 +24,9 @@ function formatTime(seconds: number) {
 }
 
 export default function RoomHeader({ roomName, session }: RoomHeaderProps) {
-    const { elapsedTime } = useElapsedTime({ isPlaying: true });
+    const { startedAt } = useRoomStore();
+    const [elapsed, setElapsed] = useState(0);
+
     const initials =
         session.user?.name
             ?.split(" ")
@@ -31,19 +34,28 @@ export default function RoomHeader({ roomName, session }: RoomHeaderProps) {
             .join("")
             .toUpperCase() ?? "?";
 
+    useEffect(() => {
+        if (!startedAt) return;
+        setElapsed(Math.floor((Date.now() - startedAt) / 1000));
+        const interval = setInterval(() => {
+            setElapsed(Math.floor((Date.now() - startedAt) / 1000));
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [startedAt]);
+
     return (
         <div className="flex items-center justify-between px-5 py-3 border-b border-white/6 bg-[#0d0f14]/80 backdrop-blur-sm">
             <div className="flex items-center gap-3">
                 <LogoWithText />
                 <div className="w-px h-4 bg-white/10" />
-                <span className="text-white/60 text-sm font-medium truncate max-w-100">{roomName}</span>
+                <span className="text-white/60 text-sm font-medium truncate max-w-50">{roomName}</span>
             </div>
 
             <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 bg-[#ff4d2e]/15 border border-[#ff4d2e]/30 rounded-full px-3 py-1">
                     <div className="w-1.5 h-1.5 rounded-full bg-[#ff4d2e] animate-pulse" />
                     <span className="text-[#ff4d2e] text-xs font-semibold">LIVE</span>
-                    <span className="text-[#ff4d2e]/70 text-xs">{formatTime(elapsedTime)}</span>
+                    <span className="text-[#ff4d2e]/70 text-xs">{startedAt ? formatTime(elapsed) : "--:--"}</span>
                 </div>
 
                 <Avatar className="w-8 h-8">

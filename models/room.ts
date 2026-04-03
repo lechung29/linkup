@@ -14,6 +14,7 @@ export interface IRoom extends Document {
         waitingRoom: boolean;
     };
     createdAt: Date;
+    startedAt: Date;
     isActive: boolean;
 }
 
@@ -29,6 +30,7 @@ const RoomSchema = new Schema<IRoom>({
         waitingRoom: { type: Boolean, default: false },
     },
     createdAt: { type: Date, default: Date.now },
+    startedAt: { type: Date, default: null },
     isActive: { type: Boolean, default: true },
 });
 
