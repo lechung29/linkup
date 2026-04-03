@@ -5,7 +5,7 @@
 import { useLocalParticipant, useParticipants, useRoomContext } from "@livekit/components-react";
 import { Mic, MicOff, Video, VideoOff, MonitorUp, MessageSquare, Users, PhoneOff } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { RoomEvent, Track } from "livekit-client";
 import { cn } from "@/lib/utils";
 import { useSocket } from "@/hooks/useSocket";
@@ -55,7 +55,7 @@ export default function ControlBar({ chatOpen, onToggleChat, participantCount, i
 
         socket.on("screenshare:rejected", () => {
             setRequestPending(false);
-            toast.error("Yêu cầu chia sẻ màn hình bị từ chối");
+            toast.error("Your screen sharing request was rejected");
         });
 
         socket.on("screenshare:stop_yours", async () => {
@@ -153,7 +153,6 @@ export default function ControlBar({ chatOpen, onToggleChat, participantCount, i
 
     return (
         <div className="flex items-center justify-between px-6 py-4 border-t border-white/6 bg-[#0d0f14]/80 backdrop-blur-sm">
-            {/* Left — Mic + Cam */}
             <div className="flex items-center gap-2">
                 <ControlButton onClick={toggleMic} icon={micEnabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />} danger={!micEnabled} tooltip={micEnabled ? "Mute" : "Unmute"} />
                 <ControlButton
@@ -164,13 +163,12 @@ export default function ControlBar({ chatOpen, onToggleChat, participantCount, i
                 />
             </div>
 
-            {/* Center — Screen share + Leave */}
             <div className="flex items-center gap-2">
                 <ControlButton
                     onClick={toggleScreenShare}
                     icon={requestPending ? <div className="w-4 h-4 border-2 border-[#a78bfa]/30 border-t-[#a78bfa] rounded-full animate-spin" /> : <MonitorUp className="w-4 h-4" />}
                     active={screenSharing || requestPending}
-                    tooltip={requestPending ? "Đang chờ phản hồi..." : screenSharing ? "Dừng chia sẻ" : "Chia sẻ màn hình"}
+                    tooltip={requestPending ? "Waiting for a reply…" : screenSharing ? "Stop screen sharing" : "Share screen"}
                 />
                 <button
                     onClick={handleLeave}
@@ -181,7 +179,6 @@ export default function ControlBar({ chatOpen, onToggleChat, participantCount, i
                 </button>
             </div>
 
-            {/* Right — Chat + Participants */}
             <div className="flex items-center gap-2">
                 <ControlButton onClick={onToggleChat} icon={<MessageSquare className="w-4 h-4" />} active={chatOpen} tooltip="Chat" />
                 <div className="flex items-center gap-1.5 px-3 h-10 rounded-xl bg-white/5 border border-white/10 text-white/50 text-sm">
@@ -199,7 +196,7 @@ function ControlButton({ onClick, icon, active = true, danger = false, tooltip }
             onClick={onClick}
             title={tooltip}
             className={cn(
-                "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 border",
+                "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 border cursor-pointer",
                 danger
                     ? "bg-red-500/20 border-red-500/40 text-red-400 hover:bg-red-500/30"
                     : active

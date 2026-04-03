@@ -46,25 +46,24 @@ export default function ScreenShareRequest({ requester, onApprove, onReject }: S
                                     </Avatar>
                                     <p className="text-white text-sm font-semibold truncate">{requester.name}</p>
                                 </div>
-                                <p className="text-white/40 text-xs leading-relaxed">muốn chia sẻ màn hình. Bạn có muốn nhường quyền không?</p>
+                                <p className="text-white/40 text-xs leading-relaxed">wants to share their screen. Do you want to give them permission?</p>
                             </div>
                         </div>
 
-                        {/* Actions */}
                         <div className="flex gap-2 mt-4">
                             <button
                                 onClick={onReject}
                                 className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white/60 hover:text-white text-xs font-medium transition-all duration-200"
                             >
                                 <X className="w-3.5 h-3.5" />
-                                Từ chối
+                                Reject
                             </button>
                             <button
                                 onClick={onApprove}
                                 className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-xl bg-[#6346ff]/20 border border-[#6346ff]/40 hover:bg-[#6346ff]/30 text-[#a78bfa] hover:text-white text-xs font-medium transition-all duration-200"
                             >
                                 <Check className="w-3.5 h-3.5" />
-                                Đồng ý nhường
+                                Accept
                             </button>
                         </div>
                     </div>

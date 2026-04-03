@@ -8,6 +8,7 @@ import { nanoid } from "nanoid";
 import { PrimaryButton } from "@/components/ui/primary-button";
 import { CreateRoomDialog } from "./CreateRoomSettingDialog";
 import { AnimatePresence, motion } from "framer-motion";
+
 function CopyField({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
     const [copied, setCopied] = useState(false);
 
@@ -68,8 +69,6 @@ export function CreateRoom() {
                     </PrimaryButton>
                 )}
             </div>
-
-            {/* Dialog */}
             <CreateRoomDialog open={dialogOpen} roomId={generatedId} onClose={() => setDialogOpen(false)} />
         </>
     );

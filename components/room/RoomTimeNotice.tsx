@@ -76,10 +76,10 @@ export default function RoomTimerNotice() {
 
                         <div className="flex-1 min-w-0">
                             <p className="text-amber-200 text-sm font-medium">{warning.message}</p>
-                            {countdown !== null && countdown > 0 && <p className="text-amber-400/70 text-xs font-mono mt-0.5">{formatCountdown(countdown)} còn lại</p>}
+                            {countdown !== null && countdown > 0 && <p className="text-amber-400/70 text-xs font-mono mt-0.5">{formatCountdown(countdown)} remaining</p>}
                         </div>
 
-                        <button onClick={() => setDismissed(true)} className="text-amber-400/50 hover:text-amber-200 transition-colors shrink-0">
+                        <button onClick={() => setDismissed(true)} className="text-amber-400/50 hover:text-amber-200 transition-colors shrink-0 cursor-pointer">
                             <X className="w-4 h-4" />
                         </button>
                     </div>

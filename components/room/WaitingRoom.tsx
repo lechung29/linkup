@@ -29,7 +29,6 @@ export default function WaitingRoom({ roomId, session, onApproved }: WaitingRoom
     useEffect(() => {
         if (!socket) return;
 
-        // Gửi request join lên host
         socket.emit("guest:request", {
             roomId,
             user: {
@@ -39,7 +38,6 @@ export default function WaitingRoom({ roomId, session, onApproved }: WaitingRoom
             },
         });
 
-        // Lắng nghe approved/rejected
         socket.on("guest:approved", () => {
             onApproved();
         });
@@ -59,7 +57,6 @@ export default function WaitingRoom({ roomId, session, onApproved }: WaitingRoom
             <div className="absolute inset-0 bg-linear-to-br from-[#0d1f1a] via-[#0a0c10] to-[#0a0c10]" />
 
             <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="relative z-10 flex flex-col items-center max-w-sm text-center px-6">
-                {/* Avatar */}
                 <Avatar className="w-20 h-20 mb-6 ring-4 ring-[#6346ff]/30">
                     <AvatarImage src={user?.image ?? ""} />
                     <AvatarFallback className="bg-[#6346ff] text-white text-2xl font-bold">{initials}</AvatarFallback>
@@ -74,8 +71,6 @@ export default function WaitingRoom({ roomId, session, onApproved }: WaitingRoom
 
                         <h1 className="text-white text-2xl font-bold tracking-tight mb-2">Waiting to join</h1>
                         <p className="text-white/40 text-sm leading-relaxed">The host will let you in soon. Please wait while your request is being reviewed.</p>
-
-                        {/* Animated dots */}
                         <div className="flex items-center gap-1.5 mt-8">
                             {[0, 1, 2].map((i) => (
                                 <motion.div

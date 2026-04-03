@@ -36,19 +36,16 @@ export function startRoomTimer(io: SocketServer, roomId: string, startedAt: numb
     const warningDelay = Math.max(0, warningAt - elapsed);
     const kickDelay = Math.max(0, ROOM_DURATION - elapsed);
 
-    console.log(`[timer] Room ${roomId} started — warning in ${Math.round(warningDelay / 1000)}s`);
-
     const warningTimer = setTimeout(() => {
         io.to(`room:${roomId}`).emit("room:warning", {
-            message: "Phòng sẽ kết thúc sau 15 phút",
+            message: "The meeting will end in 15 minutes",
             minutesLeft: 15,
         });
     }, warningDelay);
 
     const kickTimer = setTimeout(async () => {
-        console.log(`[timer] Room ${roomId} — time's up`);
         io.to(`room:${roomId}`).emit("room:ended", {
-            message: "Phòng đã hết thời gian 1 tiếng",
+            message: "The meeting has reached its 1-hour limit",
         });
         await new Promise((r) => setTimeout(r, 2000));
         await deleteRoomAndMessages(roomId);

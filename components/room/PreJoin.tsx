@@ -9,12 +9,13 @@ import { Mic, MicOff, Video, VideoOff, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PrimaryButton } from "@/components/ui/primary-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LinkupLogo } from "../ui/logo";
 
 interface PreJoinProps {
     roomId: string;
     roomName: string;
     session: Session;
-    onJoin: (options: { micEnabled: boolean; camEnabled: boolean }) => void; // 👈 thêm options
+    onJoin: (options: { micEnabled: boolean; camEnabled: boolean }) => void;
 }
 
 export default function PreJoin({ roomId, roomName, session, onJoin }: PreJoinProps) {
@@ -51,28 +52,17 @@ export default function PreJoin({ roomId, roomName, session, onJoin }: PreJoinPr
 
     return (
         <div className="fixed inset-0 bg-[#0a0c10] flex flex-col items-center justify-center">
-            {/* Background */}
             <div className="absolute inset-0 bg-linear-to-br from-[#0d1f1a] via-[#0a0c10] to-[#0a0c10]" />
 
             <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="relative w-full max-w-lg px-6 z-10">
-                {/* Logo */}
                 <div className="flex justify-center mb-6">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-[0_4px_20px_rgba(99,70,255,0.4)]" style={{ background: "linear-gradient(135deg, #6346ff, #8b6aff)" }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-                            <rect x="3" y="5" width="4" height="14" rx="2" />
-                            <rect x="10" y="2" width="4" height="20" rx="2" />
-                            <rect x="17" y="7" width="4" height="10" rx="2" />
-                        </svg>
-                    </div>
+                    <LinkupLogo />
                 </div>
-
-                {/* Title */}
                 <div className="text-center mb-6">
                     <h1 className="text-white text-2xl font-bold tracking-tight mb-1">Get Started</h1>
                     <p className="text-white/40 text-sm">Prepare your audio and video before connecting</p>
                 </div>
 
-                {/* Live badge */}
                 <div className="flex justify-center mb-6">
                     <div className="flex items-center gap-2 bg-[#ff4d2e]/20 border border-[#ff4d2e]/40 rounded-full px-4 py-1.5">
                         <div className="w-2 h-2 rounded-full bg-[#ff4d2e] animate-pulse" />
@@ -83,7 +73,6 @@ export default function PreJoin({ roomId, roomName, session, onJoin }: PreJoinPr
                     </div>
                 </div>
 
-                {/* Camera preview */}
                 <div className="relative rounded-2xl overflow-hidden bg-[#111318] aspect-video mb-4 border border-white/6">
                     {camOn ? (
                         <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover scale-x-[-1]" />
@@ -95,8 +84,6 @@ export default function PreJoin({ roomId, roomName, session, onJoin }: PreJoinPr
                             </Avatar>
                         </div>
                     )}
-
-                    {/* Mic indicator */}
                     {!micOn && (
                         <div className="absolute top-3 right-3 bg-red-500/80 rounded-full p-1.5">
                             <MicOff className="w-3 h-3 text-white" />
@@ -104,23 +91,19 @@ export default function PreJoin({ roomId, roomName, session, onJoin }: PreJoinPr
                     )}
                 </div>
 
-                {/* Controls */}
                 <div className="flex items-center justify-between mb-5">
                     <div className="flex items-center gap-2">
-                        {/* Mic */}
                         <button
                             onClick={() => setMicOn(!micOn)}
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 border ${
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 border cursor-pointer ${
                                 micOn ? "bg-white/5 border-white/10 hover:bg-white/10 text-white/70" : "bg-red-500/20 border-red-500/40 text-red-400"
                             }`}
                         >
                             {micOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
                         </button>
-
-                        {/* Cam */}
                         <button
                             onClick={() => setCamOn(!camOn)}
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 border ${
+                            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 border cursor-pointer ${
                                 camOn ? "bg-white/5 border-white/10 hover:bg-white/10 text-white/70" : "bg-red-500/20 border-red-500/40 text-red-400"
                             }`}
                         >

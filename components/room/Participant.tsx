@@ -12,7 +12,7 @@ import { useRoomStore } from "@/store/useRoomStore";
 import { useEffect } from "react";
 
 const MAX_VISIBLE = 8;
-const MAX_SIDEBAR = 3; // số người hiện ở cột phải khi share màn
+const MAX_SIDEBAR = 3;
 
 const colors = ["bg-violet-500", "bg-orange-400", "bg-blue-500", "bg-green-500", "bg-pink-500", "bg-yellow-500"];
 

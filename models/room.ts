@@ -25,7 +25,7 @@ const RoomSchema = new Schema<IRoom>({
     joinPolicy: { type: String, enum: ["always", "approval"], default: "always" },
     participants: [{ type: String }],
     settings: {
-        maxParticipants: { type: Number, default: 10 },
+        maxParticipants: { type: Number, default: 30 },
         muteOnEntry: { type: Boolean, default: false },
         waitingRoom: { type: Boolean, default: false },
     },

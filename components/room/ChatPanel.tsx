@@ -279,7 +279,7 @@ export default function ChatPanel({ activePanel, onPanelChange, onClose, session
                             key={tab}
                             onClick={() => onPanelChange(tab)}
                             className={cn(
-                                "flex-1 py-1.5 rounded-lg text-xs font-medium capitalize transition-all duration-200",
+                                "flex-1 py-1.5 rounded-lg text-xs font-medium capitalize transition-all duration-200 cursor-pointer",
                                 activePanel === tab ? "bg-white/10 text-white" : "text-white/30 hover:text-white/60",
                             )}
                         >
@@ -287,7 +287,7 @@ export default function ChatPanel({ activePanel, onPanelChange, onClose, session
                         </button>
                     ))}
                 </div>
-                <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white hover:bg-white/5 transition-all duration-200">
+                <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white hover:bg-white/5 transition-all duration-200 cursor-pointer">
                     <X className="w-4 h-4" />
                 </button>
             </div>
@@ -325,7 +325,7 @@ export default function ChatPanel({ activePanel, onPanelChange, onClose, session
                 </>
             ) : (
                 <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                    {isHost && isOverflow && <p className="text-white/30 text-xs text-center mb-3 leading-relaxed">Click 👁 để swap người hiển thị trong grid</p>}
+                    {isHost && isOverflow && <p className="text-white/30 text-xs text-center mb-3 leading-relaxed">Click the 👁 icon to switch the displayed participant on the screen</p>}
                     {participants.map((p) => {
                         const initials =
                             p.name

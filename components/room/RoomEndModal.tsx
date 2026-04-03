@@ -51,12 +51,12 @@ export default function RoomEndedModal() {
                             <Clock className="w-7 h-7 text-amber-400" />
                         </div>
 
-                        <h2 className="text-white text-xl font-bold tracking-tight mb-2">Phòng đã hết thời gian</h2>
-                        <p className="text-white/40 text-sm leading-relaxed mb-6">Phòng họp đã đạt giới hạn 1 tiếng. Tất cả thành viên sẽ được đưa ra ngoài.</p>
+                        <h2 className="text-white text-xl font-bold tracking-tight mb-2">The meeting has expired</h2>
+                        <p className="text-white/40 text-sm leading-relaxed mb-6">The meeting has reached its 1-hour limit. All participants will be disconnected</p>
 
                         <div className="flex items-center justify-center gap-2 text-white/30 text-sm">
                             <div className="w-4 h-4 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
-                            Chuyển về trang chủ sau {countdown}s...
+                            Redirecting to the home page in {countdown}s…
                         </div>
                     </motion.div>
                 </motion.div>

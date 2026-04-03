@@ -49,12 +49,10 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
 
                 roomParticipantCount[roomId] = (roomParticipantCount[roomId] || 0) + 1;
 
-                // Start timer khi người đầu tiên vào (host)
                 if (roomParticipantCount[roomId] === 1) {
                     const now = Date.now();
                     startRoomTimer(io, roomId, now);
 
-                    // ✅ Lưu startedAt vào DB
                     try {
                         const connectDB = (await import("../lib/mongodb")).default;
                         const Room = (await import("../models/room")).default;
@@ -65,7 +63,6 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
                     }
                 }
 
-                // ✅ Gửi startedAt cho người mới vào để đồng bộ timer
                 const timeLeft = getRoomTimeLeft(roomId);
                 const startedAt = getStartedAt(roomId);
 
@@ -77,7 +74,7 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
                 if (timeLeft !== null && timeLeft <= 15 * 60 * 1000) {
                     const minutesLeft = Math.floor(timeLeft / 60000);
                     socket.emit("room:warning", {
-                        message: `Phòng sẽ kết thúc sau ${minutesLeft} phút`,
+                        message: `This meeting will end in ${minutesLeft} minutes`,
                         minutesLeft,
                     });
                 }
