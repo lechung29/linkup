@@ -9,6 +9,10 @@ interface RoomStore {
 
     startedAt: number | null;
     setStartedAt: (t: number | null) => void;
+
+    unreadCount: number;
+    incrementUnread: () => void;
+    resetUnread: () => void;
 }
 
 export const useRoomStore = create<RoomStore>((set, get) => ({
@@ -35,4 +39,8 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
 
     startedAt: null,
     setStartedAt: (t) => set({ startedAt: t }),
+
+    unreadCount: 0,
+    incrementUnread: () => set((s) => ({ unreadCount: s.unreadCount + 1 })),
+    resetUnread: () => set({ unreadCount: 0 }),
 }));

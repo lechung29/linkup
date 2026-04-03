@@ -6,7 +6,26 @@ import { startRoomTimer, stopRoomTimer, getRoomTimeLeft, getStartedAt } from "./
 
 let io: SocketServer;
 const roomIdentityMap: Record<string, Record<string, string>> = {};
-const roomParticipantCount: Record<string, number> = {};
+
+async function deleteRoomIfEmpty(io: SocketServer, roomId: string) {
+    const socketsInRoom = await io.in(`room:${roomId}`).allSockets();
+
+    if (socketsInRoom.size > 0) return;
+
+    stopRoomTimer(roomId);
+    delete roomIdentityMap[roomId];
+
+    try {
+        const connectDB = (await import("../lib/mongodb")).default;
+        const Room = (await import("../models/room")).default;
+        const Message = (await import("../models/message")).default;
+        await connectDB();
+        await Room.findOneAndDelete({ roomId });
+        await Message.deleteMany({ roomId });
+    } catch (err) {
+        console.error("[room] DB error:", err);
+    }
+}
 
 export function getSocketServer(httpServer?: HTTPServer): SocketServer {
     if (!io) {
@@ -47,9 +66,9 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
                 if (!roomIdentityMap[roomId]) roomIdentityMap[roomId] = {};
                 roomIdentityMap[roomId][identity] = socket.id;
 
-                roomParticipantCount[roomId] = (roomParticipantCount[roomId] || 0) + 1;
+                const socketsInRoom = await io.in(`room:${roomId}`).allSockets();
 
-                if (roomParticipantCount[roomId] === 1) {
+                if (socketsInRoom.size === 1) {
                     const now = Date.now();
                     startRoomTimer(io, roomId, now);
 
@@ -66,10 +85,7 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
                 const timeLeft = getRoomTimeLeft(roomId);
                 const startedAt = getStartedAt(roomId);
 
-                socket.emit("room:sync", {
-                    startedAt,
-                    timeLeft,
-                });
+                socket.emit("room:sync", { startedAt, timeLeft });
 
                 if (timeLeft !== null && timeLeft <= 15 * 60 * 1000) {
                     const minutesLeft = Math.floor(timeLeft / 60000);
@@ -79,6 +95,7 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
                     });
                 }
             });
+
             socket.on("chat:send", ({ roomId, message }: { roomId: string; message: any }) => {
                 io.to(`room:${roomId}`).emit("chat:message", message);
             });
@@ -109,37 +126,20 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
                 io.to(requesterSocketId).emit("screenshare:rejected");
             });
 
+            socket.on("room:leave", async ({ roomId, identity }: { roomId: string; identity: string }) => {
+                socket.leave(`room:${roomId}`);
+                if (roomIdentityMap[roomId]) delete roomIdentityMap[roomId][identity];
+                socket.data.roomId = null;
+                socket.data.identity = null;
+                await deleteRoomIfEmpty(io, roomId);
+            });
+
             socket.on("disconnect", async () => {
                 const roomId = socket.data.roomId;
                 const identity = socket.data.identity;
-
-                if (roomId && identity) {
-                    if (roomIdentityMap[roomId]) {
-                        delete roomIdentityMap[roomId][identity];
-                    }
-
-                    roomParticipantCount[roomId] = Math.max(0, (roomParticipantCount[roomId] || 1) - 1);
-
-                    if (roomParticipantCount[roomId] === 0) {
-                        stopRoomTimer(roomId);
-                        delete roomParticipantCount[roomId];
-                        delete roomIdentityMap[roomId];
-
-                        try {
-                            const connectDB = (await import("../lib/mongodb")).default;
-                            const Room = (await import("../models/room")).default;
-                            const Message = (await import("../models/message")).default;
-                            await connectDB();
-                            await Room.findOneAndDelete({ roomId });
-                            await Message.deleteMany({ roomId });
-                            console.log(`[room] ${roomId} empty → deleted room + messages`);
-                        } catch (err) {
-                            console.error("[room] DB error:", err);
-                        }
-                    }
-                }
-
-                console.log("Socket disconnected:", socket.id);
+                if (!roomId) return;
+                if (identity && roomIdentityMap[roomId]) delete roomIdentityMap[roomId][identity];
+                await deleteRoomIfEmpty(io, roomId);
             });
         });
     }

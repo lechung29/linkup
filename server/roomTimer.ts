@@ -21,7 +21,6 @@ async function deleteRoomAndMessages(roomId: string) {
         await connectDB();
         await Room.findOneAndDelete({ roomId });
         await Message.deleteMany({ roomId });
-        console.log(`[timer] Room ${roomId} → deleted`);
     } catch (err) {
         console.error("[timer] DB error:", err);
     }

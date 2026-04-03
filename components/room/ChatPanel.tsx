@@ -5,7 +5,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Session } from "next-auth";
 import { useParticipants } from "@livekit/components-react";
-import { X, Send, SmilePlus, Loader2 } from "lucide-react";
+import { X, Send, SmilePlus, Loader2, ChevronDown } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useRoomStore } from "@/store/useRoomStore";
@@ -40,6 +40,7 @@ interface ChatPanelProps {
     isHost: boolean;
     isOverflow: boolean;
     roomId: string;
+    isDrawer?: boolean;
 }
 
 function EmojiPicker({ onPick, onClose, anchorEl }: { onPick: (e: string) => void; onClose: () => void; anchorEl: HTMLButtonElement | null }) {
@@ -47,19 +48,13 @@ function EmojiPicker({ onPick, onClose, anchorEl }: { onPick: (e: string) => voi
 
     useEffect(() => {
         if (!anchorEl) return;
-
         const rect = anchorEl.getBoundingClientRect();
         const pickerWidth = 292;
-
         let left = rect.left - pickerWidth + rect.width;
         if (left < 8) left = 8;
-        if (left + pickerWidth > window.innerWidth - 8) {
-            left = window.innerWidth - pickerWidth - 8;
-        }
-
+        if (left + pickerWidth > window.innerWidth - 8) left = window.innerWidth - pickerWidth - 8;
         let top = rect.top - 48;
         if (top < 8) top = rect.bottom + 8;
-
         setStyle({ position: "fixed", top, left, zIndex: 9999 });
     }, [anchorEl]);
 
@@ -114,11 +109,7 @@ function MessageBubble({ msg, isMe, onReact, identity }: { msg: Message; isMe: b
     const time = new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     const handleReactButton = (e: React.MouseEvent<HTMLButtonElement>) => {
-        if (anchorEl) {
-            setAnchorEl(null);
-        } else {
-            setAnchorEl(e.currentTarget);
-        }
+        setAnchorEl(anchorEl ? null : e.currentTarget);
     };
 
     return (
@@ -138,7 +129,6 @@ function MessageBubble({ msg, isMe, onReact, identity }: { msg: Message; isMe: b
                     <div className={cn("rounded-2xl px-3 py-2 text-sm leading-relaxed", isMe ? "bg-[#6346ff]/30 text-white rounded-tr-sm" : "bg-white/6 text-white/80 rounded-tl-sm")}>
                         {msg.message}
                     </div>
-
                     <button
                         onClick={handleReactButton}
                         className="w-6 h-6 rounded-lg flex items-center justify-center text-white/30 hover:text-white hover:bg-white/10 transition-colors opacity-0 group-hover:opacity-100"
@@ -187,7 +177,7 @@ function MessageBubble({ msg, isMe, onReact, identity }: { msg: Message; isMe: b
     );
 }
 
-export default function ChatPanel({ activePanel, onPanelChange, onClose, session, participantCount, isHost, isOverflow, roomId }: ChatPanelProps) {
+export default function ChatPanel({ activePanel, onPanelChange, onClose, session, participantCount, isHost, isOverflow, roomId, isDrawer = false }: ChatPanelProps) {
     const socket = useSocket();
     const participants = useParticipants();
     const [messages, setMessages] = useState<Message[]>([]);
@@ -211,20 +201,20 @@ export default function ChatPanel({ activePanel, onPanelChange, onClose, session
 
     useEffect(() => {
         if (!socket) return;
-        socket.on("chat:message", (msg: Message) => {
+        const handleMessage = (msg: Message) => {
             setMessages((prev) => {
                 if (prev.find((m) => m._id === msg._id)) return prev;
                 return [...prev, msg];
             });
-        });
-
-        socket.on("chat:reaction_update", (updatedMsg: Message) => {
+        };
+        const handleReaction = (updatedMsg: Message) => {
             setMessages((prev) => prev.map((m) => (m._id === updatedMsg._id ? updatedMsg : m)));
-        });
-
+        };
+        socket.on("chat:message", handleMessage);
+        socket.on("chat:reaction_update", handleReaction);
         return () => {
-            socket.off("chat:message");
-            socket.off("chat:reaction_update");
+            socket.off("chat:message", handleMessage);
+            socket.off("chat:reaction_update", handleReaction);
         };
     }, [socket]);
 
@@ -237,7 +227,6 @@ export default function ChatPanel({ activePanel, onPanelChange, onClose, session
         setSending(true);
         const text = message.trim();
         setMessage("");
-
         try {
             const res = await fetch("/api/messages", {
                 method: "POST",
@@ -245,7 +234,6 @@ export default function ChatPanel({ activePanel, onPanelChange, onClose, session
                 body: JSON.stringify({ roomId, message: text }),
             });
             const data = await res.json();
-
             socket?.emit("chat:send", { roomId, message: data.message });
         } catch {
             setMessage(text);
@@ -263,7 +251,6 @@ export default function ChatPanel({ activePanel, onPanelChange, onClose, session
                     body: JSON.stringify({ emoji }),
                 });
                 const data = await res.json();
-
                 socket?.emit("chat:reaction", { roomId, message: data.message });
             } catch {}
         },
@@ -271,9 +258,15 @@ export default function ChatPanel({ activePanel, onPanelChange, onClose, session
     );
 
     return (
-        <div className="w-80 flex flex-col border-l border-white/6 bg-[#0d0f14]/90 backdrop-blur-sm">
+        <div className={cn("flex flex-col bg-[#0d0f14]/95 backdrop-blur-sm", "w-80 border-l border-white/6", isDrawer && "h-full rounded-t-2xl border-l-0 border-t border-white/6")}>
+            {isDrawer && (
+                <div className="flex justify-center pt-2 pb-1">
+                    <div className="w-10 h-1 rounded-full bg-white/20" />
+                </div>
+            )}
+
             <div className="flex items-center border-b border-white/6 p-3 gap-2">
-                <div className="flex-1 flex bg-white/4 rounded-xl p-1">
+                <div className="flex-1 flex bg-white/6 rounded-xl p-1">
                     {(["chat", "participants"] as const).map((tab) => (
                         <button
                             key={tab}
@@ -308,7 +301,7 @@ export default function ChatPanel({ activePanel, onPanelChange, onClose, session
                     </div>
 
                     <div className="p-3 border-t border-white/6">
-                        <div className="flex items-center gap-2 bg-white/4 border border-white/8 rounded-xl px-3 py-2">
+                        <div className="flex items-center gap-2 bg-white/6 border border-white/6 rounded-xl px-3 py-2">
                             <input
                                 value={message}
                                 disabled={loading}
@@ -325,7 +318,7 @@ export default function ChatPanel({ activePanel, onPanelChange, onClose, session
                 </>
             ) : (
                 <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                    {isHost && isOverflow && <p className="text-white/30 text-xs text-center mb-3 leading-relaxed">Click the 👁 icon to switch the displayed participant on the screen</p>}
+                    {isHost && isOverflow && <p className="text-white/30 text-xs text-center mb-3 leading-relaxed">Click the 👁 icon to switch the displayed participant</p>}
                     {participants.map((p) => {
                         const initials =
                             p.name
@@ -335,20 +328,17 @@ export default function ChatPanel({ activePanel, onPanelChange, onClose, session
                                 .toUpperCase() ?? "?";
                         const isPinned = pinnedIdentities.includes(p.identity);
                         const colorIndex = p.identity.charCodeAt(0) % COLORS.length;
-
                         return (
-                            <div key={p.identity} className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/4 transition-colors">
+                            <div key={p.identity} className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/6 transition-colors">
                                 <Avatar className="w-8 h-8">
                                     <AvatarFallback className={`${COLORS[colorIndex]} text-white text-xs font-semibold`}>{initials}</AvatarFallback>
                                 </Avatar>
-
                                 <div className="flex-1 min-w-0">
                                     <p className="text-white/80 text-sm font-medium truncate">{p.name || p.identity}</p>
                                     <p className="text-white/30 text-xs">
                                         {p.isMicrophoneEnabled ? "🎤 Mic on" : "🔇 Mic off"} • {p.isCameraEnabled ? "📹 Cam on" : "📷 Cam off"}
                                     </p>
                                 </div>
-
                                 {isHost && isOverflow && (
                                     <button
                                         onClick={() => togglePinned(p.identity, allIdentities)}

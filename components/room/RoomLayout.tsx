@@ -16,6 +16,7 @@ import { useEffect } from "react";
 import RoomTimerNotice from "./RoomTimeNotice";
 import RoomEndedModal from "./RoomEndModal";
 import { useRoomStore } from "@/store/useRoomStore";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface RoomLayoutProps {
     roomName: string;
@@ -41,12 +42,17 @@ export default function RoomLayout({ roomName, roomId, hostId, session, initialM
     const isHost = session.user?.id === hostId;
     const isOverflow = participants.length > 8;
     const socket = useSocket();
-    const { setStartedAt } = useRoomStore();
+    const { setStartedAt, incrementUnread, resetUnread } = useRoomStore();
+
+    const handleToggleChat = () => {
+        setChatOpen((prev) => {
+            if (!prev) resetUnread();
+            return !prev;
+        });
+    };
 
     useEffect(() => {
-        if (startedAt) {
-            setStartedAt(new Date(startedAt).getTime());
-        }
+        if (startedAt) setStartedAt(new Date(startedAt).getTime());
     }, [startedAt]);
 
     useEffect(() => {
@@ -61,11 +67,24 @@ export default function RoomLayout({ roomName, roomId, hostId, session, initialM
 
     useEffect(() => {
         if (!socket) return;
+        const handleNewMessage = (msg: { identity: string }) => {
+            if (msg.identity === session.user?.email) return;
+            if (!chatOpen) incrementUnread();
+            setChatOpen((open) => {
+                return open;
+            });
+        };
+        socket.on("chat:message", handleNewMessage);
+        return () => {
+            socket.off("chat:message", handleNewMessage);
+        };
+    }, [socket, session.user?.email]);
 
+    useEffect(() => {
+        if (!socket) return;
         socket.on("screenshare:incoming_request", ({ requesterSocketId, requester }: { requesterSocketId: string; requester: { name: string; image: string } }) => {
             setShareRequester({ ...requester, socketId: requesterSocketId });
         });
-
         return () => {
             socket.off("screenshare:incoming_request");
         };
@@ -87,28 +106,67 @@ export default function RoomLayout({ roomName, roomId, hostId, session, initialM
         <div className="fixed inset-0 flex flex-col bg-[#0a0c10]">
             <RoomHeader roomName={roomName} session={session} />
 
-            <div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex overflow-hidden relative">
                 <div className="flex-1 overflow-hidden">
                     <ParticipantGrid />
                 </div>
 
                 {chatOpen && (
-                    <ChatPanel
-                        roomId={roomId}
-                        activePanel={activePanel}
-                        onPanelChange={setActivePanel}
-                        onClose={() => setChatOpen(false)}
-                        session={session}
-                        participantCount={participants.length}
-                        isHost={isHost}
-                        isOverflow={isOverflow}
-                    />
+                    <div className="hidden lg:flex">
+                        <ChatPanel
+                            roomId={roomId}
+                            activePanel={activePanel}
+                            onPanelChange={setActivePanel}
+                            onClose={() => setChatOpen(false)}
+                            session={session}
+                            participantCount={participants.length}
+                            isHost={isHost}
+                            isOverflow={isOverflow}
+                        />
+                    </div>
                 )}
+
+                <AnimatePresence>
+                    {chatOpen && (
+                        <>
+                            <motion.div
+                                key="backdrop"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+                                onClick={() => setChatOpen(false)}
+                            />
+                            <motion.div
+                                key="drawer"
+                                initial={{ x: "100%" }}
+                                animate={{ x: 0 }}
+                                exit={{ x: "100%" }}
+                                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                                className="fixed bottom-0 right-0 z-40 lg:hidden"
+                                style={{ height: "100vh" }}
+                            >
+                                <ChatPanel
+                                    roomId={roomId}
+                                    activePanel={activePanel}
+                                    onPanelChange={setActivePanel}
+                                    onClose={() => setChatOpen(false)}
+                                    session={session}
+                                    participantCount={participants.length}
+                                    isHost={isHost}
+                                    isOverflow={isOverflow}
+                                    isDrawer
+                                />
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
             </div>
 
             <ControlBar
                 chatOpen={chatOpen}
-                onToggleChat={() => setChatOpen(!chatOpen)}
+                onToggleChat={handleToggleChat}
                 participantCount={participants.length}
                 initialMic={initialMic}
                 initialCam={initialCam}

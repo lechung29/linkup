@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
     const token = new AccessToken(process.env.LIVEKIT_API_KEY!, process.env.LIVEKIT_API_SECRET!, {
         identity: session.user?.email!,
         name: session.user?.name!,
+        metadata: JSON.stringify({ image: session.user?.image ?? "" }),
     });
 
     token.addGrant({
