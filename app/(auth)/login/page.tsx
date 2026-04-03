@@ -7,17 +7,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { PrimaryButton } from "@/components/ui/primary-button";
 import { FcGoogle } from "react-icons/fc";
-import { BsFacebook } from "react-icons/bs";
-
-function LinkupLogo() {
-    return (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
-            <rect x="3" y="5" width="4" height="14" rx="2" />
-            <rect x="10" y="2" width="4" height="20" rx="2" />
-            <rect x="17" y="7" width="4" height="10" rx="2" />
-        </svg>
-    );
-}
+import { BsFacebook, BsGoogle } from "react-icons/bs";
+import { LogoWithText } from "@/components/ui/logo";
 
 export default function LoginPage() {
     const [loadingGoogle, setLoadingGoogle] = useState(false);
@@ -40,25 +31,12 @@ export default function LoginPage() {
             initial={{ opacity: 0, y: 32, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
-            className="relative w-full max-w-105 px-6"
+            className="relative w-full max-w-105 px-6 "
             style={{ zIndex: 10 }}
         >
-            <motion.div
-                initial={{ opacity: 0, y: -16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
-                className="flex items-center justify-center gap-3 mb-10"
-            >
-                <motion.div
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer shadow-[0_4px_20px_rgba(99,70,255,0.45)]"
-                    style={{ background: "linear-gradient(135deg, #6346ff, #8b6aff)" }}
-                >
-                    <LinkupLogo />
-                </motion.div>
-                <span className="text-2xl font-bold text-white tracking-tight">Linkup</span>
-            </motion.div>
+            <div className="mb-10">
+                <LogoWithText />
+            </div>
 
             <motion.div
                 initial={{ opacity: 0 }}
@@ -90,27 +68,15 @@ export default function LoginPage() {
                 <div className="flex flex-col gap-3">
                     <PrimaryButton
                         onClick={handleGoogle}
-                        brand="google"
+                        brand="default"
                         disabled={isLoading}
                         isLoading={loadingGoogle}
-                        leftIcon={<FcGoogle size={28} />}
+                        leftIcon={<BsGoogle size={28} />}
                         uiVariant="filled"
                         tone="dark"
                         className="w-full"
                     >
                         Sign in with Google
-                    </PrimaryButton>
-                    <PrimaryButton
-                        onClick={handleFacebook}
-                        brand="default"
-                        disabled={isLoading}
-                        isLoading={loadingFacebook}
-                        leftIcon={<BsFacebook size={16} />}
-                        uiVariant="filled"
-                        tone="dark"
-                        className="w-full"
-                    >
-                        Sign in with Facebook
                     </PrimaryButton>
                 </div>
 

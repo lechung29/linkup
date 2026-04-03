@@ -4,8 +4,9 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IRoom extends Document {
     roomId: string;
-    name: string;
+    name?: string;
     hostId: string;
+    joinPolicy: "always" | "approval";
     participants: string[];
     settings: {
         maxParticipants: number;
@@ -18,8 +19,9 @@ export interface IRoom extends Document {
 
 const RoomSchema = new Schema<IRoom>({
     roomId: { type: String, required: true, unique: true },
-    name: { type: String, required: true },
+    name: { type: String, required: false, default: "" },
     hostId: { type: String, required: true },
+    joinPolicy: { type: String, enum: ["always", "approval"], default: "always" },
     participants: [{ type: String }],
     settings: {
         maxParticipants: { type: Number, default: 10 },
@@ -30,4 +32,6 @@ const RoomSchema = new Schema<IRoom>({
     isActive: { type: Boolean, default: true },
 });
 
-export default mongoose.models.Room || mongoose.model<IRoom>("Rooms", RoomSchema);
+const Room = mongoose.models?.Room || mongoose.model<IRoom>("Room", RoomSchema);
+
+export default Room;

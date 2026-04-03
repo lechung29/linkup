@@ -21,7 +21,6 @@ export async function GET(req: NextRequest) {
         room,
         canPublish: true,
         canSubscribe: true,
-        canPublishSources: [1, 2, 3, 4],
     });
 
     return NextResponse.json({ token: await token.toJwt() });

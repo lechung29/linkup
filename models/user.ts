@@ -20,4 +20,6 @@ const UserSchema = new Schema<IUser>({
     lastLoginAt: { type: Date, default: Date.now },
 });
 
-export default mongoose.models.User || mongoose.model<IUser>("Users", UserSchema);
+const User = mongoose.models?.User || mongoose.model<IUser>("User", UserSchema);
+
+export default User;

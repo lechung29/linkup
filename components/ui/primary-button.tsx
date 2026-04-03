@@ -56,7 +56,7 @@ const PrimaryButton = React.forwardRef<HTMLButtonElement, PrimaryButtonProps>((p
     const theme = useMemo(() => {
         if (isLight) {
             return {
-                text: "text-black/80",
+                text: "text-white/90",
                 outline: { base: "bg-emerald-50/80 border border-emerald-200 hover:bg-emerald-100/80" },
                 wash: "linear-gradient(135deg, rgba(255,255,255,0.28), rgba(255,255,255,0))",
                 outlineShine: "linear-gradient(110deg, transparent 25%, rgba(34,197,94,0.08) 50%, transparent 75%)",
