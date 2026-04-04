@@ -8,6 +8,7 @@ import { Session } from "next-auth";
 import { useSocket } from "@/hooks/useSocket";
 import { Loader2, XCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
 
 interface WaitingRoomProps {
     roomId: string;
@@ -38,17 +39,21 @@ export default function WaitingRoom({ roomId, session, onApproved }: WaitingRoom
             },
         });
 
-        socket.on("guest:approved", () => {
+        const handleApproved = () => onApproved();
+        const handleRejected = () => setStatus("rejected");
+        const handleHostLeft = () => {
+            toast.info("The host has left. You can now join with the room code.");
             onApproved();
-        });
+        };
 
-        socket.on("guest:rejected", () => {
-            setStatus("rejected");
-        });
+        socket.on("guest:approved", handleApproved);
+        socket.on("guest:rejected", handleRejected);
+        socket.on("host:left", handleHostLeft);
 
         return () => {
-            socket.off("guest:approved");
-            socket.off("guest:rejected");
+            socket.off("guest:approved", handleApproved);
+            socket.off("guest:rejected", handleRejected);
+            socket.off("host:left", handleHostLeft);
         };
     }, [socket, roomId]);
 

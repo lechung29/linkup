@@ -163,14 +163,12 @@ export default function ControlBar({ chatOpen, onToggleChat, participantCount, i
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2">
-                <div className="hidden sm:block">
-                    <ControlButton
-                        onClick={toggleScreenShare}
-                        icon={requestPending ? <div className="w-4 h-4 border-2 border-[#a78bfa]/30 border-t-[#a78bfa] rounded-full animate-spin" /> : <MonitorUp className="w-4 h-4" />}
-                        active={screenSharing || requestPending}
-                        tooltip={requestPending ? "Waiting..." : screenSharing ? "Stop sharing" : "Share screen"}
-                    />
-                </div>
+                <ControlButton
+                    onClick={toggleScreenShare}
+                    icon={requestPending ? <div className="w-4 h-4 border-2 border-[#a78bfa]/30 border-t-[#a78bfa] rounded-full animate-spin" /> : <MonitorUp className="w-4 h-4" />}
+                    active={screenSharing || requestPending}
+                    tooltip={requestPending ? "Waiting..." : screenSharing ? "Stop sharing" : "Share screen"}
+                />
 
                 <button
                     onClick={handleLeave}

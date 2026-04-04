@@ -28,15 +28,19 @@ export default function WaitingGuests({ roomId, session, isHost }: WaitingGuests
     useEffect(() => {
         if (!socket || !isHost) return;
 
-        // Host join room để nhận notifications
         socket.emit("host:join", roomId);
 
-        socket.on("guest:waiting", (guest: WaitingGuest) => {
-            setGuests((prev) => [...prev, guest]);
-        });
+        const handleGuestWaiting = (guest: WaitingGuest) => {
+            setGuests((prev) => {
+                if (prev.some((g) => g.socketId === guest.socketId)) return prev;
+                return [...prev, guest];
+            });
+        };
+
+        socket.on("guest:waiting", handleGuestWaiting);
 
         return () => {
-            socket.off("guest:waiting");
+            socket.off("guest:waiting", handleGuestWaiting);
         };
     }, [socket, roomId, isHost]);
 

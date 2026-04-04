@@ -75,15 +75,15 @@ export default function RoomTimerNotice() {
         <AnimatePresence>
             {warning && !dismissed && (
                 <motion.div
-                    initial={{ opacity: 0, y: -16 }}
+                    initial={{ opacity: 0, y: -1.5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -16 }}
+                    exit={{ opacity: 0, y: -1.5 }}
                     transition={{ duration: 0.3 }}
-                    className="absolute top-16 left-1/2 -translate-x-1/2 z-40 w-full max-w-sm px-4"
+                    className="absolute top-1.5 left-1/2 -translate-x-1/2 z-40 w-full max-w-sm px-4"
                 >
-                    <div className="flex items-center gap-3 bg-amber-500/15 border border-amber-500/30 rounded-2xl px-4 py-3 backdrop-blur-xl shadow-lg">
-                        <div className="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
-                            <Clock className="w-4 h-4 text-amber-400" />
+                    <div className="flex items-center gap-3 bg-amber-200/15 border border-amber-400/30 rounded-2xl px-4 py-3 backdrop-blur-xl shadow-lg">
+                        <div className="w-8 h-8 rounded-xl bg-amber-200/20 flex items-center justify-center shrink-0">
+                            <Clock className="w-4 h-4 text-amber-100" />
                         </div>
 
                         <div className="flex-1 min-w-0">
