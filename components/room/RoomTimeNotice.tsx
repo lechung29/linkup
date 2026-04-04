@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, X } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
@@ -11,24 +11,27 @@ import { useRouter } from "next/navigation";
 export default function RoomTimerNotice() {
     const socket = useSocket();
     const router = useRouter();
-    const [warning, setWarning] = useState<{ message: string; minutesLeft: number } | null>(null);
+    const [warning, setWarning] = useState<{ message: string } | null>(null);
     const [countdown, setCountdown] = useState<number | null>(null);
     const [dismissed, setDismissed] = useState(false);
+
+    const deadlineRef = useRef<number | null>(null);
 
     useEffect(() => {
         if (!socket) return;
 
         socket.on("room:warning", ({ message, minutesLeft }: { message: string; minutesLeft: number }) => {
-            setWarning({ message, minutesLeft });
+            deadlineRef.current = Date.now() + minutesLeft * 60 * 1000;
+            setWarning({ message });
             setCountdown(minutesLeft * 60);
             setDismissed(false);
         });
 
         socket.on("room:ended", ({ message }: { message: string }) => {
+            deadlineRef.current = null;
             setWarning(null);
             setCountdown(null);
-            setTimeout(() => router.push("/"), 3000);
-            alert(message); 
+            setTimeout(() => router.push("/"), 5000);
         });
 
         return () => {
@@ -38,18 +41,27 @@ export default function RoomTimerNotice() {
     }, [socket]);
 
     useEffect(() => {
-        if (countdown === null || countdown <= 0) return;
-        const interval = setInterval(() => {
-            setCountdown((prev) => {
-                if (prev === null || prev <= 1) {
-                    clearInterval(interval);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [countdown]);
+        if (!warning) return;
+
+        const tick = () => {
+            if (deadlineRef.current === null) return;
+            const remaining = Math.max(0, Math.floor((deadlineRef.current - Date.now()) / 1000));
+            setCountdown(remaining);
+        };
+
+        tick();
+        const interval = setInterval(tick, 1000);
+
+        const handleVisibility = () => {
+            if (document.visibilityState === "visible") tick();
+        };
+        document.addEventListener("visibilitychange", handleVisibility);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener("visibilitychange", handleVisibility);
+        };
+    }, [warning]);
 
     const formatCountdown = (seconds: number) => {
         const m = Math.floor(seconds / 60)

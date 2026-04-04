@@ -2,7 +2,7 @@
 
 import { Server as HTTPServer } from "http";
 import { Server as SocketServer } from "socket.io";
-import { startRoomTimer, stopRoomTimer, getRoomTimeLeft, getStartedAt } from "./roomTimer";
+import { startRoomTimer, stopRoomTimer, getRoomTimeLeft, getStartedAt, WARNING_BEFORE } from "./roomTimer";
 
 let io: SocketServer;
 const roomIdentityMap: Record<string, Record<string, string>> = {};
@@ -87,7 +87,7 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
 
                 socket.emit("room:sync", { startedAt, timeLeft });
 
-                if (timeLeft !== null && timeLeft <= 15 * 60 * 1000) {
+                if (timeLeft !== null && timeLeft < WARNING_BEFORE) {
                     const minutesLeft = Math.floor(timeLeft / 60000);
                     socket.emit("room:warning", {
                         message: `This meeting will end in ${minutesLeft} minutes`,

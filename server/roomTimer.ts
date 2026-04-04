@@ -2,8 +2,8 @@
 
 import { Server as SocketServer } from "socket.io";
 
-const ROOM_DURATION = 60 * 60 * 1000;
-const WARNING_BEFORE = 15 * 60 * 1000;
+export const ROOM_DURATION = 60 * 60 * 1000;
+export const WARNING_BEFORE = 15 * 60 * 1000;
 
 interface RoomTimer {
     startedAt: number;

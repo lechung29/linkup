@@ -24,7 +24,7 @@ interface ControlBarProps {
     onShareRequest: (requester: { name: string; image: string }, socketId: string) => void;
 }
 
-export default function ControlBar({ chatOpen, onToggleChat, participantCount, initialMic, initialCam, roomId, session, onShareRequest }: ControlBarProps) {
+export default function ControlBar({ chatOpen, onToggleChat, participantCount, initialMic, initialCam, roomId, session }: ControlBarProps) {
     const router = useRouter();
     const { localParticipant } = useLocalParticipant();
     const participants = useParticipants();
