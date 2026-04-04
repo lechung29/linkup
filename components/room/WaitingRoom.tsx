@@ -8,8 +8,7 @@ import { Session } from "next-auth";
 import { useSocket } from "@/hooks/useSocket";
 import { Loader2, XCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import RoomCancelledModal from "./RoomCancelledModal";
 
 interface WaitingRoomProps {
     roomId: string;
@@ -20,8 +19,8 @@ interface WaitingRoomProps {
 export default function WaitingRoom({ roomId, session, onApproved }: WaitingRoomProps) {
     const socket = useSocket();
     const [status, setStatus] = useState<"waiting" | "rejected">("waiting");
+    const [cancelModalOpen, setCancelModalOpen] = useState(false);
     const user = session.user;
-    const router = useRouter();
     const initials =
         user?.name
             ?.split(" ")
@@ -44,75 +43,79 @@ export default function WaitingRoom({ roomId, session, onApproved }: WaitingRoom
         const handleApproved = () => onApproved();
         const handleRejected = () => setStatus("rejected");
         const handleHostLeft = () => {
-            toast.info("The host has left. You can now join with the room code.");
             onApproved();
         };
-
-        const handleHostCancelRoom = () => {
-            toast.info("The host has canceled the meeting. You will be redirected to the home.");
-            setTimeout(() => {
-                router.push("/");
-            }, 3000);
+        const handleRoomCancelled = () => {
+            setCancelModalOpen(true);
         };
 
         socket.on("guest:approved", handleApproved);
         socket.on("guest:rejected", handleRejected);
         socket.on("host:left", handleHostLeft);
-        socket.on("room:cancelled", handleHostCancelRoom);
+        socket.on("room:cancelled", handleRoomCancelled);
 
         return () => {
             socket.off("guest:approved", handleApproved);
             socket.off("guest:rejected", handleRejected);
             socket.off("host:left", handleHostLeft);
-            socket.off("room:cancelled", handleHostCancelRoom);
+            socket.off("room:cancelled", handleRoomCancelled);
         };
-    }, [socket, roomId]);
+    }, [socket, roomId, user, onApproved]);
 
     return (
-        <div className="fixed inset-0 bg-[#0a0c10] flex flex-col items-center justify-center">
-            <div className="absolute inset-0 bg-linear-to-br from-[#0d1f1a] via-[#0a0c10] to-[#0a0c10]" />
+        <>
+            <div className="fixed inset-0 bg-[#0a0c10] flex flex-col items-center justify-center">
+                <div className="absolute inset-0 bg-linear-to-br from-[#0d1f1a] via-[#0a0c10] to-[#0a0c10]" />
 
-            <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="relative z-10 flex flex-col items-center max-w-sm text-center px-6">
-                <Avatar className="w-20 h-20 mb-6 ring-4 ring-[#6346ff]/30">
-                    <AvatarImage src={user?.image ?? ""} />
-                    <AvatarFallback className="bg-[#6346ff] text-white text-2xl font-bold">{initials}</AvatarFallback>
-                </Avatar>
+                <motion.div
+                    initial={{ opacity: 0, y: 24 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="relative z-10 flex flex-col items-center max-w-sm text-center px-6"
+                >
+                    <Avatar className="w-20 h-20 mb-6 ring-4 ring-[#6346ff]/30">
+                        <AvatarImage src={user?.image ?? ""} />
+                        <AvatarFallback className="bg-[#6346ff] text-white text-2xl font-bold">{initials}</AvatarFallback>
+                    </Avatar>
 
-                {status === "waiting" ? (
-                    <>
-                        <div className="flex items-center gap-2 mb-4">
-                            <Loader2 className="w-4 h-4 text-[#6346ff] animate-spin" />
-                            <span className="text-white/60 text-sm">Waiting for host approval</span>
-                        </div>
+                    {status === "waiting" ? (
+                        <>
+                            <div className="flex items-center gap-2 mb-4">
+                                <Loader2 className="w-4 h-4 text-[#6346ff] animate-spin" />
+                                <span className="text-white/60 text-sm">Waiting for host approval</span>
+                            </div>
 
-                        <h1 className="text-white text-2xl font-bold tracking-tight mb-2">Waiting to join</h1>
-                        <p className="text-white/40 text-sm leading-relaxed">The host will let you in soon. Please wait while your request is being reviewed.</p>
-                        <div className="flex items-center gap-1.5 mt-8">
-                            {[0, 1, 2].map((i) => (
-                                <motion.div
-                                    key={i}
-                                    className="w-2 h-2 rounded-full bg-[#6346ff]/50"
-                                    animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
-                                    transition={{
-                                        duration: 1.5,
-                                        repeat: Infinity,
-                                        delay: i * 0.2,
-                                    }}
-                                />
-                            ))}
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <XCircle className="w-12 h-12 text-red-400 mb-4" />
-                        <h1 className="text-white text-2xl font-bold tracking-tight mb-2">Request declined</h1>
-                        <p className="text-white/40 text-sm leading-relaxed mb-6">The host has declined your request to join this meeting.</p>
-                        <a href="/" className="text-[#6346ff] hover:text-[#8b6aff] text-sm font-medium transition-colors">
-                            ← Back to home
-                        </a>
-                    </>
-                )}
-            </motion.div>
-        </div>
+                            <h1 className="text-white text-2xl font-bold tracking-tight mb-2">Waiting to join</h1>
+                            <p className="text-white/40 text-sm leading-relaxed">The host will let you in soon. Please wait while your request is being reviewed.</p>
+                            <div className="flex items-center gap-1.5 mt-8">
+                                {[0, 1, 2].map((i) => (
+                                    <motion.div
+                                        key={i}
+                                        className="w-2 h-2 rounded-full bg-[#6346ff]/50"
+                                        animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
+                                        transition={{
+                                            duration: 1.5,
+                                            repeat: Infinity,
+                                            delay: i * 0.2,
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <XCircle className="w-12 h-12 text-red-400 mb-4" />
+                            <h1 className="text-white text-2xl font-bold tracking-tight mb-2">Request declined</h1>
+                            <p className="text-white/40 text-sm leading-relaxed mb-6">The host has declined your request to join this meeting.</p>
+                            <a href="/" className="text-[#6346ff] hover:text-[#8b6aff] text-sm font-medium transition-colors">
+                                ← Back to home
+                            </a>
+                        </>
+                    )}
+                </motion.div>
+            </div>
+
+            <RoomCancelledModal open={cancelModalOpen} countdown={4} />
+        </>
     );
 }

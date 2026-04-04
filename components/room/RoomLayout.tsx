@@ -17,6 +17,7 @@ import RoomTimerNotice from "./RoomTimeNotice";
 import RoomEndedModal from "./RoomEndModal";
 import { useRoomStore } from "@/store/useRoomStore";
 import { motion, AnimatePresence } from "framer-motion";
+import RoomCancelledModal from "./RoomCancelledModal";
 
 interface RoomLayoutProps {
     roomName: string;
@@ -43,6 +44,7 @@ export default function RoomLayout({ roomName, roomId, hostId, session, initialM
     const isOverflow = participants.length > 8;
     const socket = useSocket();
     const { setStartedAt, incrementUnread, resetUnread } = useRoomStore();
+    const [cancelModalOpen, setCancelModalOpen] = useState(false);
 
     const handleToggleChat = () => {
         setChatOpen((prev) => {
@@ -50,6 +52,18 @@ export default function RoomLayout({ roomName, roomId, hostId, session, initialM
             return !prev;
         });
     };
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleRoomCancelled = () => {
+            setCancelModalOpen(true);
+        };
+
+        socket.on("room:cancelled", handleRoomCancelled);
+        return () => {
+            socket.off("room:cancelled", handleRoomCancelled);
+        };
+    }, [socket, roomId]);
 
     useEffect(() => {
         if (startedAt) setStartedAt(new Date(startedAt).getTime());
@@ -178,6 +192,7 @@ export default function RoomLayout({ roomName, roomId, hostId, session, initialM
             <ScreenShareRequest requester={shareRequester} onApprove={handleApproveShare} onReject={handleRejectShare} />
             <RoomTimerNotice />
             <RoomEndedModal />
+            <RoomCancelledModal open={cancelModalOpen} countdown={4} />
         </div>
     );
 }

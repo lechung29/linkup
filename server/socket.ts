@@ -31,28 +31,6 @@ async function handleHostLeft(io: SocketServer, roomId: string) {
     }
 }
 
-async function handleCancelRoom(io: SocketServer, roomId: string) {
-    const waitingSockets = await io.in(`waiting:${roomId}`).allSockets();
-    const roomSockets = await io.in(`room:${roomId}`).allSockets();
-
-    if (waitingSockets.size > 0) {
-        console.log(waitingSockets);
-        io.to(`waiting:${roomId}`).emit("host:cancel");
-    }
-
-    delete roomPendingGuests[roomId];
-    if (roomSockets.size === 0) return;
-
-    try {
-        const connectDB = (await import("../lib/mongodb")).default;
-        const Room = (await import("../models/room")).default;
-        await connectDB();
-        await Room.findByIdAndDelete({ roomId });
-    } catch (err) {
-        console.error("[room] handleHostCancel DB error:", err);
-    }
-}
-
 async function deleteRoomIfEmpty(io: SocketServer, roomId: string) {
     const socketsInRoom = await io.in(`room:${roomId}`).allSockets();
     if (socketsInRoom.size > 0) return;
@@ -188,9 +166,15 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
             socket.on("screenshare:reject", ({ requesterSocketId }: any) => {
                 io.to(requesterSocketId).emit("screenshare:rejected");
             });
+            socket.on("prejoin:watch", (roomId: string) => {
+                socket.join(`prejoin:${roomId}`);
+            });
 
             socket.on("room:cancel", async (roomId: string) => {
                 io.to(`waiting:${roomId}`).emit("room:cancelled");
+                io.to(`prejoin:${roomId}`).emit("room:cancelled");
+                io.to(`room:${roomId}`).emit("room:cancelled");
+
                 stopRoomTimer(roomId);
                 delete roomIdentityMap[roomId];
                 delete roomHostSocketMap[roomId];

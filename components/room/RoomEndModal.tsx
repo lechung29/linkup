@@ -42,6 +42,10 @@ export default function RoomEndedModal() {
             {show && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
                     <motion.div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="room-end-title"
+                        aria-describedby="room-end-desc"
                         initial={{ opacity: 0, scale: 0.9, y: 16 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
