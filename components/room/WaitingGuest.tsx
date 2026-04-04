@@ -88,13 +88,13 @@ export default function WaitingGuests({ roomId, session, isHost }: WaitingGuests
                             <div className="flex items-center gap-1.5">
                                 <button
                                     onClick={() => handleApprove(guest)}
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-green-500/20 border border-green-500/40 text-green-400 hover:bg-green-500/30 transition-all duration-200"
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-green-500/20 border border-green-500/40 text-green-400 hover:bg-green-500/30 transition-all duration-200 cursor-pointer"
                                 >
                                     <Check className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                     onClick={() => handleReject(guest)}
-                                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30 transition-all duration-200"
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-500/20 border border-red-500/40 text-red-400 hover:bg-red-500/30 transition-all duration-200 cursor-pointer"
                                 >
                                     <X className="w-3.5 h-3.5" />
                                 </button>

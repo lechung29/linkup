@@ -3,7 +3,7 @@
 "use client";
 
 import { useLocalParticipant, useParticipants, useRoomContext } from "@livekit/components-react";
-import { Mic, MicOff, Video, VideoOff, MonitorUp, MessageSquare, Users, PhoneOff } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, MonitorUp, MessageSquare, Users, PhoneOff, Hand } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { RoomEvent, Track } from "livekit-client";
@@ -21,10 +21,13 @@ interface ControlBarProps {
     initialCam: boolean;
     roomId: string;
     session: Session;
+    handRaised: boolean;
+    raisedHandsCount: number;
+    onToggleHand: () => void;
     onShareRequest: (requester: { name: string; image: string }, socketId: string) => void;
 }
 
-export default function ControlBar({ chatOpen, onToggleChat, participantCount, initialMic, initialCam, roomId, session }: ControlBarProps) {
+export default function ControlBar({ chatOpen, onToggleChat, participantCount, initialMic, initialCam, roomId, session, handRaised, raisedHandsCount, onToggleHand }: ControlBarProps) {
     const router = useRouter();
     const { localParticipant } = useLocalParticipant();
     const participants = useParticipants();
@@ -169,7 +172,6 @@ export default function ControlBar({ chatOpen, onToggleChat, participantCount, i
                     active={screenSharing || requestPending}
                     tooltip={requestPending ? "Waiting..." : screenSharing ? "Stop sharing" : "Share screen"}
                 />
-
                 <button
                     onClick={handleLeave}
                     className="flex items-center gap-1.5 sm:gap-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-400 rounded-xl px-3 sm:px-4 h-9 sm:h-10 text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer"
@@ -181,9 +183,17 @@ export default function ControlBar({ chatOpen, onToggleChat, participantCount, i
 
             <div className="flex items-center gap-1.5 sm:gap-2">
                 <div className="relative">
+                    <ControlButton onClick={onToggleHand} icon={<Hand className="w-4 h-4" />} active={handRaised} tooltip={handRaised ? "Lower hand" : "Raise hand"} />
+                    {raisedHandsCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 min-w-4.5 h-4.5 px-1 rounded-full bg-[#a78bfa] text-white text-[10px] font-bold flex items-center justify-center leading-none pointer-events-none">
+                            {raisedHandsCount > 99 ? "99+" : raisedHandsCount}
+                        </span>
+                    )}
+                </div>
+                <div className="relative">
                     <ControlButton onClick={onToggleChat} icon={<MessageSquare className="w-4 h-4" />} active={chatOpen} tooltip="Chat" />
                     {unreadCount > 0 && !chatOpen && (
-                        <span className="absolute -top-1.5 -right-1.5 min-w-4.5 h-4.5 px-1 rounded-full bg-[#6346ff] text-white text-[10px] font-bold flex items-center justify-center leading-none pointer-events-none">
+                        <span className="absolute -top-1.5 -right-1.5 min-w-4.5 h-4.5 px-1 rounded-full bg-red-800 text-white text-[10px] font-bold flex items-center justify-center leading-none pointer-events-none">
                             {unreadCount > 99 ? "99+" : unreadCount}
                         </span>
                     )}

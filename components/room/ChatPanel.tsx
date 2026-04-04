@@ -5,7 +5,7 @@
 import { useState, useRef, useEffect, useCallback, type CSSProperties } from "react";
 import { Session } from "next-auth";
 import { useParticipants } from "@livekit/components-react";
-import { X, Send, SmilePlus, Loader2, Paperclip, FileText, Eye, EyeOff, Upload, DownloadIcon } from "lucide-react";
+import { X, Send, SmilePlus, Loader2, Paperclip, FileText, Eye, EyeOff, Upload, DownloadIcon, Hand, HandMetal } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { useRoomStore } from "@/store/useRoomStore";
@@ -160,14 +160,15 @@ interface PendingFile {
 }
 
 interface ChatPanelProps {
-    activePanel: "chat" | "participants";
-    onPanelChange: (panel: "chat" | "participants") => void;
+    activePanel: "chat" | "participants" | "hands";
+    onPanelChange: (panel: "chat" | "participants" | "hands") => void;
     onClose: () => void;
     session: Session;
     participantCount: number;
     isHost: boolean;
     isOverflow: boolean;
     roomId: string;
+    raisedHands: Array<{ identity: string; name?: string; image?: string }>;
     isDrawer?: boolean;
 }
 
@@ -423,7 +424,7 @@ function MessageBubble({ msg, isMe, onReact, identity }: { msg: Message; isMe: b
     );
 }
 
-export default function ChatPanel({ activePanel, onPanelChange, onClose, session, participantCount, isHost, isOverflow, roomId, isDrawer = false }: ChatPanelProps) {
+export default function ChatPanel({ activePanel, onPanelChange, onClose, session, participantCount, isHost, isOverflow, roomId, raisedHands, isDrawer = false }: ChatPanelProps) {
     const socket = useSocket();
     const participants = useParticipants();
     const [messages, setMessages] = useState<Message[]>([]);
@@ -645,7 +646,7 @@ export default function ChatPanel({ activePanel, onPanelChange, onClose, session
     const isBusy = sending || uploading;
 
     return (
-        <div className={cn("flex flex-col bg-[#0d0f14]/95 backdrop-blur-sm", "w-80 border-l border-white/6", isDrawer && "h-full rounded-t-2xl border-l-0 border-t border-white/6")}>
+        <div className={cn("flex flex-col bg-[#0d0f14]/95 backdrop-blur-sm", "w-96 border-l border-white/6", isDrawer && "h-full rounded-t-2xl border-l-0 border-t border-white/6")}>
             {isDrawer && (
                 <div className="flex justify-center pt-2 pb-1">
                     <div className="w-10 h-1 rounded-full bg-white/20" />
@@ -653,8 +654,8 @@ export default function ChatPanel({ activePanel, onPanelChange, onClose, session
             )}
 
             <div className="flex items-center border-b border-white/6 p-3 gap-2">
-                <div className="flex-1 flex bg-white/6 rounded-xl p-1">
-                    {(["chat", "participants"] as const).map((tab) => (
+                <div className="flex-1 flex gap-1 bg-white/6 rounded-xl px-1 py-1.5">
+                    {(["chat", "participants", "hands"] as const).map((tab) => (
                         <button
                             key={tab}
                             onClick={() => onPanelChange(tab)}
@@ -663,7 +664,7 @@ export default function ChatPanel({ activePanel, onPanelChange, onClose, session
                                 activePanel === tab ? "bg-white/10 text-white" : "text-white/30 hover:text-white/60",
                             )}
                         >
-                            {tab === "participants" ? `${tab} (${participantCount})` : tab}
+                            {tab === "participants" ? `${tab} (${participantCount})` : tab === "hands" ? `${tab} (${raisedHands.length})` : tab}
                         </button>
                     ))}
                 </div>
@@ -767,7 +768,7 @@ export default function ChatPanel({ activePanel, onPanelChange, onClose, session
                         <input ref={fileInputRef} type="file" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar,.7z" onChange={handleFileChange} className="hidden" />
                     </div>
                 </>
-            ) : (
+            ) : activePanel === "participants" ? (
                 <div className="flex-1 overflow-y-auto p-4 space-y-2 chat-scroll">
                     {isHost && isOverflow && <p className="text-white/30 text-xs text-center mb-3 leading-relaxed">Click the 👁 icon to switch the displayed participant</p>}
                     {participants.map((p) => {
@@ -812,6 +813,42 @@ export default function ChatPanel({ activePanel, onPanelChange, onClose, session
                             </div>
                         );
                     })}
+                </div>
+            ) : (
+                <div className="flex-1 overflow-y-auto p-4 space-y-2 chat-scroll">
+                    {raisedHands.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-full text-center py-16">
+                            <HandMetal className="w-11 h-11 text-white/15 mb-3" />
+                            <p className="text-white/35 text-sm font-medium">No one has raised hand yet</p>
+                            <p className="text-white/20 text-xs mt-1">Raised hands will appear here in real time</p>
+                        </div>
+                    ) : (
+                        raisedHands.map((hand) => {
+                            const initials =
+                                hand.name
+                                    ?.split(" ")
+                                    .map((n) => n[0])
+                                    .join("")
+                                    .toUpperCase() ?? "?";
+                            const colorIndex = hand.identity.charCodeAt(0) % COLORS.length;
+                            return (
+                                <div key={hand.identity} className="flex items-center gap-3 p-2 rounded-xl bg-white/4 border border-white/6">
+                                    <Avatar className="w-8 h-8">
+                                        {hand.image ? (
+                                            <AvatarImage src={hand.image} />
+                                        ) : (
+                                            <AvatarFallback className={`${COLORS[colorIndex]} text-white text-xs font-semibold`}>{initials}</AvatarFallback>
+                                        )}
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-white/80 text-sm font-medium truncate">{hand.name || hand.identity}</p>
+                                        <p className="text-white/30 text-xs">is raising hand</p>
+                                    </div>
+                                    <Hand className="w-4 h-4 text-[#a78bfa]" />
+                                </div>
+                            );
+                        })
+                    )}
                 </div>
             )}
         </div>

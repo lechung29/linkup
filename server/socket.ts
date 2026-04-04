@@ -9,6 +9,7 @@ const roomIdentityMap: Record<string, Record<string, string>> = {};
 
 const roomHostSocketMap: Record<string, string> = {};
 const roomPendingGuests: Record<string, Array<{ socketId: string; user: any }>> = {};
+const roomRaisedHands: Record<string, Array<{ identity: string; name?: string; image?: string }>> = {};
 
 async function handleHostLeft(io: SocketServer, roomId: string) {
     const waitingSockets = await io.in(`waiting:${roomId}`).allSockets();
@@ -31,6 +32,28 @@ async function handleHostLeft(io: SocketServer, roomId: string) {
     }
 }
 
+async function handleCancelRoom(io: SocketServer, roomId: string) {
+    const waitingSockets = await io.in(`waiting:${roomId}`).allSockets();
+    const roomSockets = await io.in(`room:${roomId}`).allSockets();
+
+    if (waitingSockets.size > 0) {
+        console.log(waitingSockets);
+        io.to(`waiting:${roomId}`).emit("host:cancel");
+    }
+
+    delete roomPendingGuests[roomId];
+    if (roomSockets.size === 0) return;
+
+    try {
+        const connectDB = (await import("../lib/mongodb")).default;
+        const Room = (await import("../models/room")).default;
+        await connectDB();
+        await Room.findByIdAndDelete({ roomId });
+    } catch (err) {
+        console.error("[room] handleHostCancel DB error:", err);
+    }
+}
+
 async function deleteRoomIfEmpty(io: SocketServer, roomId: string) {
     const socketsInRoom = await io.in(`room:${roomId}`).allSockets();
     if (socketsInRoom.size > 0) return;
@@ -50,6 +73,16 @@ async function deleteRoomIfEmpty(io: SocketServer, roomId: string) {
     } catch (err) {
         console.error("[room] DB error:", err);
     }
+}
+
+function syncRaisedHands(io: SocketServer, roomId: string) {
+    io.to(`room:${roomId}`).emit("room:hands:sync", { hands: roomRaisedHands[roomId] ?? [] });
+}
+
+function removeRaisedHand(roomId: string, identity: string) {
+    if (!roomRaisedHands[roomId]) return;
+    roomRaisedHands[roomId] = roomRaisedHands[roomId].filter((hand) => hand.identity !== identity);
+    if (roomRaisedHands[roomId].length === 0) delete roomRaisedHands[roomId];
 }
 
 export function getSocketServer(httpServer?: HTTPServer): SocketServer {
@@ -127,6 +160,7 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
                 const startedAt = getStartedAt(roomId);
 
                 socket.emit("room:sync", { startedAt, timeLeft });
+                socket.emit("room:hands:sync", { hands: roomRaisedHands[roomId] ?? [] });
 
                 if (timeLeft !== null && timeLeft <= WARNING_BEFORE) {
                     const minutesLeft = Math.floor(timeLeft / 60000);
@@ -135,6 +169,23 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
                         minutesLeft,
                     });
                 }
+            });
+
+            socket.on("room:hand:toggle", ({ roomId, identity, raised, user }: { roomId: string; identity: string; raised: boolean; user?: { name?: string; image?: string } }) => {
+                if (!roomRaisedHands[roomId]) roomRaisedHands[roomId] = [];
+
+                if (raised) {
+                    roomRaisedHands[roomId] = roomRaisedHands[roomId].filter((hand) => hand.identity !== identity);
+                    roomRaisedHands[roomId].push({
+                        identity,
+                        name: user?.name || identity,
+                        image: user?.image || "",
+                    });
+                } else {
+                    removeRaisedHand(roomId, identity);
+                }
+
+                syncRaisedHands(io, roomId);
             });
 
             socket.on("chat:send", ({ roomId, message }: { roomId: string; message: any }) => {
@@ -166,15 +217,11 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
             socket.on("screenshare:reject", ({ requesterSocketId }: any) => {
                 io.to(requesterSocketId).emit("screenshare:rejected");
             });
-            socket.on("prejoin:watch", (roomId: string) => {
-                socket.join(`prejoin:${roomId}`);
-            });
 
             socket.on("room:cancel", async (roomId: string) => {
                 io.to(`waiting:${roomId}`).emit("room:cancelled");
-                io.to(`prejoin:${roomId}`).emit("room:cancelled");
                 io.to(`room:${roomId}`).emit("room:cancelled");
-
+                delete roomRaisedHands[roomId];
                 stopRoomTimer(roomId);
                 delete roomIdentityMap[roomId];
                 delete roomHostSocketMap[roomId];
@@ -197,6 +244,8 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
 
                 socket.leave(`room:${roomId}`);
                 if (roomIdentityMap[roomId]) delete roomIdentityMap[roomId][identity];
+                removeRaisedHand(roomId, identity);
+                syncRaisedHands(io, roomId);
                 socket.data.roomId = null;
                 socket.data.identity = null;
 
@@ -219,6 +268,8 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
 
                 const wasHost = roomHostSocketMap[roomId] === socket.id;
                 if (identity && roomIdentityMap[roomId]) delete roomIdentityMap[roomId][identity];
+                if (identity) removeRaisedHand(roomId, identity);
+                if (identity) syncRaisedHands(io, roomId);
 
                 if (wasHost) {
                     delete roomHostSocketMap[roomId];

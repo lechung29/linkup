@@ -17,7 +17,6 @@ import RoomTimerNotice from "./RoomTimeNotice";
 import RoomEndedModal from "./RoomEndModal";
 import { useRoomStore } from "@/store/useRoomStore";
 import { motion, AnimatePresence } from "framer-motion";
-import RoomCancelledModal from "./RoomCancelledModal";
 
 interface RoomLayoutProps {
     roomName: string;
@@ -37,14 +36,16 @@ interface ShareRequester {
 
 export default function RoomLayout({ roomName, roomId, hostId, session, initialMic, initialCam, startedAt }: RoomLayoutProps) {
     const [chatOpen, setChatOpen] = useState(false);
-    const [activePanel, setActivePanel] = useState<"chat" | "participants">("chat");
+    const [activePanel, setActivePanel] = useState<"chat" | "participants" | "hands">("chat");
+    const [raisedHands, setRaisedHands] = useState<Array<{ identity: string; name?: string; image?: string }>>([]);
     const [shareRequester, setShareRequester] = useState<ShareRequester | null>(null);
     const participants = useParticipants();
     const isHost = session.user?.id === hostId;
     const isOverflow = participants.length > 8;
     const socket = useSocket();
     const { setStartedAt, incrementUnread, resetUnread } = useRoomStore();
-    const [cancelModalOpen, setCancelModalOpen] = useState(false);
+    const myIdentity = session.user?.email || "";
+    const myHandRaised = raisedHands.some((hand) => hand.identity === myIdentity);
 
     const handleToggleChat = () => {
         setChatOpen((prev) => {
@@ -52,18 +53,6 @@ export default function RoomLayout({ roomName, roomId, hostId, session, initialM
             return !prev;
         });
     };
-    useEffect(() => {
-        if (!socket) return;
-
-        const handleRoomCancelled = () => {
-            setCancelModalOpen(true);
-        };
-
-        socket.on("room:cancelled", handleRoomCancelled);
-        return () => {
-            socket.off("room:cancelled", handleRoomCancelled);
-        };
-    }, [socket, roomId]);
 
     useEffect(() => {
         if (startedAt) setStartedAt(new Date(startedAt).getTime());
@@ -76,6 +65,19 @@ export default function RoomLayout({ roomName, roomId, hostId, session, initialM
         });
         return () => {
             socket.off("room:sync");
+        };
+    }, [socket]);
+
+    useEffect(() => {
+        if (!socket) return;
+        const handleHandsSync = ({ hands }: { hands: Array<{ identity: string; name?: string; image?: string }> }) => {
+            setRaisedHands(hands || []);
+        };
+
+        socket.on("room:hands:sync", handleHandsSync);
+
+        return () => {
+            socket.off("room:hands:sync", handleHandsSync);
         };
     }, [socket]);
 
@@ -116,6 +118,20 @@ export default function RoomLayout({ roomName, roomId, hostId, session, initialM
         setShareRequester(null);
     };
 
+    const handleToggleHand = () => {
+        if (!socket) return;
+        socket.emit("room:hand:toggle", {
+            roomId,
+            identity: myIdentity,
+            raised: !myHandRaised,
+            user: {
+                id: session.user?.id,
+                name: session.user?.name,
+                image: session.user?.image,
+            },
+        });
+    };
+
     return (
         <div className="fixed inset-0 flex flex-col bg-[#0a0c10]">
             <RoomHeader roomName={roomName} session={session} />
@@ -136,6 +152,7 @@ export default function RoomLayout({ roomName, roomId, hostId, session, initialM
                             participantCount={participants.length}
                             isHost={isHost}
                             isOverflow={isOverflow}
+                            raisedHands={raisedHands}
                         />
                     </div>
                 )}
@@ -170,6 +187,7 @@ export default function RoomLayout({ roomName, roomId, hostId, session, initialM
                                     participantCount={participants.length}
                                     isHost={isHost}
                                     isOverflow={isOverflow}
+                                    raisedHands={raisedHands}
                                     isDrawer
                                 />
                             </motion.div>
@@ -186,13 +204,15 @@ export default function RoomLayout({ roomName, roomId, hostId, session, initialM
                 initialCam={initialCam}
                 roomId={roomId}
                 session={session}
+                handRaised={myHandRaised}
+                raisedHandsCount={raisedHands.length}
+                onToggleHand={handleToggleHand}
                 onShareRequest={(requester, socketId) => setShareRequester({ ...requester, socketId })}
             />
             <WaitingGuests roomId={roomId} session={session} isHost={isHost} />
             <ScreenShareRequest requester={shareRequester} onApprove={handleApproveShare} onReject={handleRejectShare} />
             <RoomTimerNotice />
             <RoomEndedModal />
-            <RoomCancelledModal open={cancelModalOpen} countdown={4} />
         </div>
     );
 }
