@@ -5,6 +5,7 @@ import "./globals.css";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Toaster } from "sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
     title: "Linkup",
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         className: "bg-zinc-900! text-red-400! border! border-red-500/30! shadow-lg!",
                     }}
                 />
+                <TooltipProvider>{children}</TooltipProvider>
             </body>
         </html>
     );

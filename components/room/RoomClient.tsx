@@ -7,6 +7,8 @@ import { Session } from "next-auth";
 import VideoRoom from "./VideoRoom";
 import WaitingRoom from "./WaitingRoom";
 import PreJoin from "./PreJoin";
+import { useRouter } from "next/navigation";
+import { useSocket } from "@/hooks/useSocket";
 
 interface RoomClientProps {
     roomId: string;
@@ -26,6 +28,8 @@ interface JoinOptions {
 
 export default function RoomClient({ roomId, roomName, hostId, joinPolicy, session, startedAt }: RoomClientProps) {
     const isHost = session.user?.id === hostId;
+    const router = useRouter();
+    const socket = useSocket();
     const [stage, setStage] = useState<Stage>("prejoin");
     const [joinOptions, setJoinOptions] = useState<JoinOptions>({ micEnabled: true, camEnabled: true });
 
@@ -38,13 +42,18 @@ export default function RoomClient({ roomId, roomName, hostId, joinPolicy, sessi
         }
     };
 
+    const handleCancelRoom = () => {
+        socket?.emit("room:cancel", roomId);
+        router.push("/");
+    };
+
     if (stage === "prejoin") {
-        return <PreJoin roomId={roomId} roomName={roomName} session={session} onJoin={handlePreJoin} />;
+        return <PreJoin roomId={roomId} roomName={roomName} session={session} onJoin={handlePreJoin} onCancel={handleCancelRoom} isHost={isHost} />;
     }
 
     if (stage === "waiting") {
         return <WaitingRoom roomId={roomId} session={session} onApproved={() => setStage("room")} />;
     }
 
-    return <VideoRoom roomId={roomId} roomName={roomName} hostId={hostId} session={session} initialMic={joinOptions.micEnabled} initialCam={joinOptions.camEnabled} startedAt={startedAt}/>;
+    return <VideoRoom roomId={roomId} roomName={roomName} hostId={hostId} session={session} initialMic={joinOptions.micEnabled} initialCam={joinOptions.camEnabled} startedAt={startedAt} />;
 }

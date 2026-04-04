@@ -7,11 +7,7 @@ import { startRoomTimer, stopRoomTimer, getRoomTimeLeft, getStartedAt, WARNING_B
 let io: SocketServer;
 const roomIdentityMap: Record<string, Record<string, string>> = {};
 
-// Server-side: roomId → host's socketId (set on "host:join", never trusts client).
 const roomHostSocketMap: Record<string, string> = {};
-
-// Server-side: roomId → list of guests waiting for approval.
-// Kept so we can replay them if the host joins AFTER a guest already sent a request.
 const roomPendingGuests: Record<string, Array<{ socketId: string; user: any }>> = {};
 
 async function handleHostLeft(io: SocketServer, roomId: string) {
@@ -32,6 +28,28 @@ async function handleHostLeft(io: SocketServer, roomId: string) {
         await Room.findOneAndUpdate({ roomId }, { $set: { joinPolicy: "always" } });
     } catch (err) {
         console.error("[room] handleHostLeft DB error:", err);
+    }
+}
+
+async function handleCancelRoom(io: SocketServer, roomId: string) {
+    const waitingSockets = await io.in(`waiting:${roomId}`).allSockets();
+    const roomSockets = await io.in(`room:${roomId}`).allSockets();
+
+    if (waitingSockets.size > 0) {
+        console.log(waitingSockets);
+        io.to(`waiting:${roomId}`).emit("host:cancel");
+    }
+
+    delete roomPendingGuests[roomId];
+    if (roomSockets.size === 0) return;
+
+    try {
+        const connectDB = (await import("../lib/mongodb")).default;
+        const Room = (await import("../models/room")).default;
+        await connectDB();
+        await Room.findByIdAndDelete({ roomId });
+    } catch (err) {
+        console.error("[room] handleHostCancel DB error:", err);
     }
 }
 
@@ -169,6 +187,25 @@ export function getSocketServer(httpServer?: HTTPServer): SocketServer {
 
             socket.on("screenshare:reject", ({ requesterSocketId }: any) => {
                 io.to(requesterSocketId).emit("screenshare:rejected");
+            });
+
+            socket.on("room:cancel", async (roomId: string) => {
+                io.to(`waiting:${roomId}`).emit("room:cancelled");
+                stopRoomTimer(roomId);
+                delete roomIdentityMap[roomId];
+                delete roomHostSocketMap[roomId];
+                delete roomPendingGuests[roomId];
+
+                try {
+                    const connectDB = (await import("../lib/mongodb")).default;
+                    const Room = (await import("../models/room")).default;
+                    const Message = (await import("../models/message")).default;
+                    await connectDB();
+                    await Room.findOneAndDelete({ roomId });
+                    await Message.deleteMany({ roomId });
+                } catch (err) {
+                    console.error("[room] cancel error:", err);
+                }
             });
 
             socket.on("room:leave", async ({ roomId, identity }: { roomId: string; identity: string }) => {

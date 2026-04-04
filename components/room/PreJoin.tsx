@@ -5,25 +5,49 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Session } from "next-auth";
-import { Mic, MicOff, Video, VideoOff, Settings } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff, ArrowLeftFromLine } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { PrimaryButton } from "@/components/ui/primary-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LinkupLogo } from "../ui/logo";
+import { useSocket } from "@/hooks/useSocket";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface PreJoinProps {
     roomId: string;
     roomName: string;
     session: Session;
+    isHost?: boolean;
     onJoin: (options: { micEnabled: boolean; camEnabled: boolean }) => void;
+    onCancel: () => void | Promise<void>;
 }
 
-export default function PreJoin({ roomId, roomName, session, onJoin }: PreJoinProps) {
+export default function PreJoin({ roomId, roomName, session, isHost = false, onJoin, onCancel }: PreJoinProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [micOn, setMicOn] = useState(true);
     const [camOn, setCamOn] = useState(true);
     const [displayName, setDisplayName] = useState(session.user?.name || "");
     const [stream, setStream] = useState<MediaStream | null>(null);
+    const [cancelling, setCancelling] = useState(false);
+    const socket = useSocket();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!socket) return;
+        const handleHostCancelRoom = () => {
+            toast.info("The host has canceled the meeting. You will be redirected to the home.");
+            setTimeout(() => {
+                router.push("/");
+            }, 3000);
+        };
+
+        socket.on("room:cancelled", handleHostCancelRoom);
+
+        return () => {
+            socket.off("room:cancelled", handleHostCancelRoom);
+        };
+    }, [socket, roomId]);
 
     useEffect(() => {
         if (camOn) {
@@ -49,6 +73,13 @@ export default function PreJoin({ roomId, roomName, session, onJoin }: PreJoinPr
             .map((n) => n[0])
             .join("")
             .toUpperCase() ?? "?";
+
+    const handleCancel = async () => {
+        if (cancelling) return;
+        setCancelling(true);
+        stream?.getTracks().forEach((t) => t.stop());
+        onCancel();
+    };
 
     return (
         <div className="fixed inset-0 bg-[#0a0c10] flex flex-col items-center justify-center">
@@ -91,7 +122,7 @@ export default function PreJoin({ roomId, roomName, session, onJoin }: PreJoinPr
                     )}
                 </div>
 
-                <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center justify-between gap-4 mb-5">
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setMicOn(!micOn)}
@@ -109,8 +140,23 @@ export default function PreJoin({ roomId, roomName, session, onJoin }: PreJoinPr
                         >
                             {camOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
                         </button>
+                        {isHost && (
+                            <div className="group relative">
+                                <button
+                                    onClick={handleCancel}
+                                    className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 border cursor-pointer ${
+                                        camOn ? "bg-white/5 border-white/10 hover:bg-white/10 text-white/70" : "bg-red-500/20 border-red-500/40 text-red-400"
+                                    }`}
+                                >
+                                    <ArrowLeftFromLine className="w-4 h-4" />
+                                </button>
+                                <div className="bg-[#ff4d2e]/20 border border-[#ff4d2e]/40 py-2 px-4 rounded-full group-hover:flex hidden absolute -bottom-2 translate-y-full left-1/2 -translate-x-1/2">
+                                    <span className="text-[#ff4d2e] text-sm whitespace-nowrap">Cancel meeting</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex gap-2">
                         <Input
                             value={displayName}
                             onChange={(e) => setDisplayName(e.target.value)}
@@ -125,7 +171,7 @@ export default function PreJoin({ roomId, roomName, session, onJoin }: PreJoinPr
                             disabled={!displayName.trim()}
                             uiVariant="filled"
                             tone="dark"
-                            className="px-6 whitespace-nowrap"
+                            className="px-4 whitespace-nowrap"
                         >
                             Join Now
                         </PrimaryButton>

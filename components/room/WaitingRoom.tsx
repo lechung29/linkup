@@ -9,6 +9,7 @@ import { useSocket } from "@/hooks/useSocket";
 import { Loader2, XCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface WaitingRoomProps {
     roomId: string;
@@ -20,6 +21,7 @@ export default function WaitingRoom({ roomId, session, onApproved }: WaitingRoom
     const socket = useSocket();
     const [status, setStatus] = useState<"waiting" | "rejected">("waiting");
     const user = session.user;
+    const router = useRouter();
     const initials =
         user?.name
             ?.split(" ")
@@ -46,14 +48,23 @@ export default function WaitingRoom({ roomId, session, onApproved }: WaitingRoom
             onApproved();
         };
 
+        const handleHostCancelRoom = () => {
+            toast.info("The host has canceled the meeting. You will be redirected to the home.");
+            setTimeout(() => {
+                router.push("/");
+            }, 3000);
+        };
+
         socket.on("guest:approved", handleApproved);
         socket.on("guest:rejected", handleRejected);
         socket.on("host:left", handleHostLeft);
+        socket.on("room:cancelled", handleHostCancelRoom);
 
         return () => {
             socket.off("guest:approved", handleApproved);
             socket.off("guest:rejected", handleRejected);
             socket.off("host:left", handleHostLeft);
+            socket.off("room:cancelled", handleHostCancelRoom);
         };
     }, [socket, roomId]);
 

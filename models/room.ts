@@ -18,21 +18,23 @@ export interface IRoom extends Document {
     isActive: boolean;
 }
 
-const RoomSchema = new Schema<IRoom>({
-    roomId: { type: String, required: true, unique: true },
-    name: { type: String, required: false, default: "" },
-    hostId: { type: String, required: true },
-    joinPolicy: { type: String, enum: ["always", "approval"], default: "always" },
-    participants: [{ type: String }],
-    settings: {
-        maxParticipants: { type: Number, default: 30 },
-        muteOnEntry: { type: Boolean, default: false },
-        waitingRoom: { type: Boolean, default: false },
+const RoomSchema = new Schema<IRoom>(
+    {
+        roomId: { type: String, required: true, unique: true },
+        name: { type: String, required: false, default: "" },
+        hostId: { type: String, required: true },
+        joinPolicy: { type: String, enum: ["always", "approval"], default: "always" },
+        participants: [{ type: String }],
+        settings: {
+            maxParticipants: { type: Number, default: 30 },
+            muteOnEntry: { type: Boolean, default: false },
+            waitingRoom: { type: Boolean, default: false },
+        },
+        createdAt: { type: Date, default: Date.now },
+        startedAt: { type: Date, default: null },
+        isActive: { type: Boolean, default: true },
     },
-    createdAt: { type: Date, default: Date.now },
-    startedAt: { type: Date, default: null },
-    isActive: { type: Boolean, default: true },
-});
+);
 
 const Room = mongoose.models?.Room || mongoose.model<IRoom>("Room", RoomSchema);
 
